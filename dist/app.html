@@ -1,0 +1,2231 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asset Management Litigation Monitor</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+/* ── CSS Variables ─────────────────────────────────────────────── */
+:root {
+  --bg:           #0d0f14;
+  --surface:      #161a22;
+  --surface2:     #1e2330;
+  --border:       #2a3040;
+  --border-bright:#3d4d66;
+  --accent:       #2d7aff;
+  --accent2:      #00d4aa;
+  --warn:         #ff6b35;
+  --danger:       #ff3b5c;
+  --text:         #e8edf5;
+  --text-dim:     #7a8899;
+  --text-muted:   #445566;
+  --gold:         #ffc840;
+  --success:      #22c55e;
+  --font:         'IBM Plex Sans Thai', sans-serif;
+  --mono:         'IBM Plex Mono', monospace;
+  --radius:       8px;
+  --radius-sm:    4px;
+  --shadow:       0 4px 20px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 var(--border);
+}
+.logo {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.logo span { color: var(--text-dim); }
+header .divider { width: 1px; height: 24px; background: var(--border); flex-shrink:0; }
+.file-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-dim); font-family: var(--mono);
+  overflow: hidden;
+}
+.file-status .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-muted); transition: background 0.4s; flex-shrink:0;
+}
+.file-status.loaded .dot { background: var(--success); box-shadow: 0 0 6px var(--success); }
+#fileStatusText { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+.header-hint {
+  font-size: 11px; color: var(--text-muted); font-family: var(--mono); flex-shrink:0;
+}
+.header-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius-sm); font-size: 13px;
+  font-family: var(--font); font-weight: 500;
+  cursor: pointer; border: none; transition: all 0.12s; white-space: nowrap;
+  user-select: none;
+}
+.btn-primary   { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #4a8fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(45,122,255,0.35); }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--border-bright); background: #242b3a; }
+.btn-success   { background: var(--success); color: #fff; }
+.btn-success:hover { background: #16a34a; }
+.btn-danger    { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btn-danger:hover  { background: rgba(255,59,92,0.1); }
+.btn-sm  { padding: 5px 10px; font-size: 12px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+.btn:active { transform: translateY(0) !important; }
+
+/* ── Layout ── */
+.app { display: flex; height: calc(100vh - 56px); overflow: hidden; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 210px; min-width: 210px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 16px 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.sidebar-section { padding: 4px 12px 2px; }
+.sidebar-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; cursor: pointer;
+  color: var(--text-dim); font-size: 13px;
+  transition: all 0.12s; border-left: 2px solid transparent;
+  user-select: none; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: rgba(45,122,255,0.1); color: var(--accent); border-left-color: var(--accent); }
+.nav-icon { font-size: 14px; width: 18px; text-align: center; }
+.nav-count {
+  margin-left: auto; font-family: var(--mono); font-size: 10px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 1px 6px; border-radius: 10px;
+}
+
+/* ── Main ── */
+.main { flex: 1; overflow-y: auto; padding: 24px 28px; }
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.15s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+
+/* ── Page Header ── */
+.page-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 20px; gap: 16px;
+}
+.page-title { font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.page-sub   { font-size: 12px; color: var(--text-dim); }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  margin-bottom: 14px;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.card-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.card-sub   { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+/* ── Form Grid ── */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 16px; }
+.form-grid.col-2 { grid-template-columns: 1fr 1fr; }
+.form-grid.col-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-full { grid-column: 1 / -1; }
+
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.field label .req { color: var(--danger); margin-left: 2px; }
+.field input, .field select, .field textarea {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  padding: 7px 10px; font-size: 13px; font-family: var(--font);
+  transition: border-color 0.12s, box-shadow 0.12s; outline: none; width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,122,255,0.15);
+}
+.field input[readonly] { color: var(--text-dim); cursor: default; }
+.field input[readonly]:focus { border-color: var(--border); box-shadow: none; }
+.field input.invalid { border-color: var(--danger); }
+.field textarea { resize: vertical; min-height: 64px; }
+.field select option { background: var(--surface2); }
+.hint { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+/* ── Computed badge row (urgency display) ── */
+.urgency-display { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex; align-items: center; white-space: nowrap;
+  padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600;
+  font-family: var(--mono); letter-spacing: 0.02em;
+}
+.badge-blue   { background: rgba(45,122,255,0.18);  color: #7ab4ff; }
+.badge-green  { background: rgba(34,197,94,0.18);   color: #4ade80; }
+.badge-red    { background: rgba(255,59,92,0.18);   color: #ff7097; }
+.badge-gold   { background: rgba(255,200,64,0.18);  color: #ffd970; }
+.badge-gray   { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+.badge-teal   { background: rgba(0,212,170,0.18);   color: #34d8b4; }
+
+/* ── Table ── */
+.table-wrap {
+  overflow-x: auto; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); position: relative;
+}
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+thead th {
+  background: var(--surface2); padding: 9px 12px;
+  text-align: left; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim); white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 2;
+}
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.08s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.03); }
+tbody td { padding: 8px 12px; color: var(--text); vertical-align: middle; }
+tfoot td { padding: 8px 12px; background: var(--surface2); }
+.td-mono    { font-family: var(--mono); font-size: 11.5px; color: var(--accent); }
+.td-actions { display: flex; gap: 5px; flex-wrap: nowrap; }
+
+/* ── Search Bar ── */
+.search-bar-wrap {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 0 12px; flex-wrap: wrap;
+}
+.search-input-wrap {
+  display: flex; align-items: center;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0 10px;
+  flex: 1; min-width: 200px; max-width: 360px;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.search-input-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,122,255,0.12); }
+.search-icon { color: var(--text-muted); font-size: 13px; flex-shrink:0; }
+.search-input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-size: 13px; font-family: var(--font);
+  padding: 7px 8px;
+}
+.search-clear {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; padding: 2px 4px; font-size: 13px;
+  transition: color 0.12s;
+}
+.search-clear:hover { color: var(--danger); }
+.filter-select {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-dim);
+  padding: 6px 8px; font-size: 12px; font-family: var(--font);
+  cursor: pointer; outline: none;
+}
+.filter-select:focus { border-color: var(--accent); color: var(--text); }
+.filter-select option { background: var(--surface2); }
+
+/* ── Pagination ── */
+.pagination {
+  display: flex; align-items: center; gap: 4px;
+  padding: 12px 0 4px; flex-wrap: wrap;
+}
+.pg-btn {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-dim);
+  padding: 5px 10px; font-size: 12px; font-family: var(--mono);
+  cursor: pointer; transition: all 0.12s; min-width: 32px; text-align: center;
+}
+.pg-btn:hover:not([disabled]) { background: var(--surface); border-color: var(--border-bright); color: var(--text); }
+.pg-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pg-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
+.pg-ellipsis { color: var(--text-muted); padding: 0 4px; font-size: 12px; }
+.pg-info { margin-left: 8px; font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+
+/* ── Alerts ── */
+.alert {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 16px; border-radius: var(--radius); margin-bottom: 14px; font-size: 13px;
+}
+.alert-info { background: rgba(45,122,255,0.08); border: 1px solid rgba(45,122,255,0.25); }
+.alert-warn { background: rgba(255,107,53,0.08); border: 1px solid rgba(255,107,53,0.25); }
+
+/* ── Toast ── */
+#toast-container {
+  position: fixed; bottom: 20px; right: 20px; z-index: 999;
+  display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.toast {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 11px 14px;
+  font-size: 13px; color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: var(--shadow);
+  animation: slideInToast 0.2s ease; min-width: 260px; max-width: 380px;
+  pointer-events: all;
+}
+.toast.success { border-left: 3px solid var(--success); }
+.toast.error   { border-left: 3px solid var(--danger);  }
+.toast.info    { border-left: 3px solid var(--accent);  }
+.toast.warn    { border-left: 3px solid var(--gold);    }
+@keyframes slideInToast {
+  from { opacity:0; transform:translateX(16px); }
+  to   { opacity:1; transform:none; }
+}
+
+/* ── Modal (shared) ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.65); align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+  width: 580px; max-width: 94vw; max-height: 82vh;
+  overflow-y: auto; box-shadow: var(--shadow);
+  animation: modalIn 0.15s ease;
+}
+@keyframes modalIn {
+  from { opacity:0; transform:scale(0.96) translateY(-8px); }
+  to   { opacity:1; transform:none; }
+}
+.modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+}
+
+/* Confirm modal (small) */
+#confirmModal .modal-box { width: 380px; max-width: 90vw; }
+.confirm-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+/* ── Skeleton ── */
+.skel {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--radius-sm);
+  height: 14px;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+thead th .skel { height: 10px; margin: 2px 0; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+
+/* ── Dashboard ── */
+.stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 18px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  transition: border-color 0.15s;
+}
+.stat-card:hover { border-color: var(--border-bright); }
+.stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+.stat-value { font-size: 28px; font-weight: 700; font-family: var(--mono); }
+.stat-value.blue  { color: var(--accent);  }
+.stat-value.green { color: var(--success); }
+.stat-value.red   { color: var(--danger);  }
+.stat-value.gold  { color: var(--gold);    }
+
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.chart-grid.col-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* SVG chart helpers */
+.chart-bar-label { font-size: 11px; fill: var(--text-dim); font-family: 'IBM Plex Mono',monospace; }
+.chart-axis      { stroke: var(--border); }
+.chart-value     { font-size: 11px; fill: var(--text); font-family: 'IBM Plex Mono',monospace; }
+.donut-wrap      { display: flex; align-items: center; gap: 18px; }
+.donut-legend    { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+.legend-item     { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim); }
+.legend-dot      { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.urgency-row     { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.urgency-row:last-child { border-bottom: none; }
+.urgency-bar-wrap { flex: 1; background: var(--surface2); border-radius: 3px; height: 7px; overflow: hidden; }
+.urgency-bar     { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+/* ── Misc ── */
+.empty-state { text-align: center; padding: 48px 32px; color: var(--text-muted); }
+.empty-state .icon { font-size: 36px; margin-bottom: 10px; opacity: 0.45; }
+.empty-state p { font-size: 13px; }
+
+.section-divider {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-muted);
+  margin: 18px 0 10px; display: flex; align-items: center; gap: 10px;
+}
+.section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .form-grid.col-3 { grid-template-columns: 1fr 1fr; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .chart-grid, .chart-grid.col-3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .form-grid, .form-grid.col-2, .form-grid.col-3 { grid-template-columns: 1fr; }
+  .main { padding: 16px; }
+}
+
+</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    .modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+    .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:22px;width:600px;max-width:94vw;max-height:84vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.5)}
+    .modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+    .confirm-actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-end}
+    .gate-summary{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0}
+    .gate-chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;font-family:var(--mono)}
+    .urgency-display{display:flex;align-items:center;gap:10px;padding:6px 0}
+    .auto-label{color:var(--accent2);font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px}
+    .lawstep-bar{background:var(--surface2);border:1px dashed var(--border-bright);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px}
+    .lawstep-bar .desc{font-size:12px;color:var(--text-dim);flex:1}
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">Asset Management <span>Litigation</span></div>
+  <div class="divider"></div>
+  <div class="file-status" id="fileStatus">
+    <div class="dot"></div>
+    <span id="fileStatusText">ลากไฟล์ Asset Management.xlsx วางที่นี่ หรือกด "โหลด Asset Management"</span>
+  </div>
+  <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);flex-shrink:0">Ctrl+S บันทึก · Ctrl+F ค้นหา · Esc ปิด</span>
+  <div class="header-actions">
+    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('caseFileInput').click()">📂 โหลด Asset Management</button>
+    <button class="btn btn-secondary btn-sm" id="btnLawstep" disabled onclick="document.getElementById('lawstepInput').click()">🔄 Import LawStep</button>
+    <button class="btn btn-success btn-sm"  id="btnExport"  disabled onclick="exportExcel()">⬇️ บันทึก / Export</button>
+  </div>
+</header>
+<input type="file" id="caseFileInput"      accept=".xlsx,.xls" onchange="loadCases(event)"    style="display:none">
+<input type="file" id="lawstepInput"  accept=".xlsx,.xls" onchange="loadLawStep(event)" style="display:none">
+
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">ภาพรวม</div>
+      <div class="nav-item" onclick="switchPage('dashboard')" data-page="dashboard"><span class="nav-icon">📊</span> Dashboard</div>
+    </div>
+    <div class="sidebar-section" style="margin-top:10px">
+      <div class="sidebar-label">ข้อมูล</div>
+      <div class="nav-item active" onclick="switchPage('case')" data-page="case"><span class="nav-icon">📁</span> Case Register<span class="nav-count" id="cntCase">0</span></div>
+      <div class="nav-item" onclick="switchPage('sla')"  data-page="sla"><span class="nav-icon">⏰</span> SLA Tracker<span class="nav-count" id="cntSla">0</span></div>
+      <div class="nav-item" onclick="switchPage('prescription')" data-page="prescription"><span class="nav-icon">🚨</span> Prescription<span class="nav-count" id="cntPrescript">0</span></div>
+      <div class="nav-item" onclick="switchPage('reimburse')" data-page="reimburse"><span class="nav-icon">💰</span> Reimbursement<span class="nav-count" id="cntReimburse">0</span></div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ════ DASHBOARD ════ -->
+    <div class="page" id="page-dashboard">
+      <div class="page-header"><div><div class="page-title">📊 Dashboard</div><div class="page-sub">KPI · Gate Status · Urgency Live</div></div></div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Case Register</div><div class="stat-value blue" id="statCase">0</div></div>
+        <div class="stat-card"><div class="stat-label">SLA Entries</div><div class="stat-value green" id="statSla">0</div></div>
+        <div class="stat-card"><div class="stat-label">Prescription Watch</div><div class="stat-value gold" id="statPrescript">0</div></div>
+        <div class="stat-card"><div class="stat-label">Reimbursement</div><div class="stat-value red" id="statReimburse">0</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-header"><div><div class="card-title">SLA Status</div><div class="card-sub">คำนวณจาก deadline live</div></div></div><div id="chartSlaStatus"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+        <div class="card"><div class="card-header"><div><div class="card-title">Legal Status</div></div></div><div id="chartLegalStatus"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+      </div>
+      <div class="chart-grid col-3">
+        <div class="card"><div class="card-header"><div><div class="card-title">Prescription Urgency</div><div class="card-sub">Live จากวันปัจจุบัน</div></div></div><div id="chartUrgency"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+        <div class="card"><div class="card-header"><div><div class="card-title">Payment Status</div></div></div><div id="chartPayStatus"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+        <div class="card"><div class="card-header"><div><div class="card-title">OSB by Tier</div></div></div><div id="chartOsbTier"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+      </div>
+    </div>
+
+    <!-- ════ CASE REGISTER ════ -->
+    <div class="page active" id="page-case">
+      <div class="page-header">
+        <div><div class="page-title">📁 Case Register</div><div class="page-sub">Gate 1–4 คำนวณอัตโนมัติ · บันทึกใหม่ → SLA + Prescription สร้างทันที</div></div>
+        <button class="btn btn-primary btn-sm" onclick="showCaseForm()">＋ เพิ่มคดีใหม่</button>
+      </div>
+
+      <div class="lawstep-bar">
+        <span style="font-size:18px">🔄</span>
+        <div class="desc"><strong>Import LawStep</strong> — อัปเดตสถานะคดีจาก Law_Step.xlsx โดยอัตโนมัติ (match ด้วย Contract No.)<br>ข้อมูลที่มีอยู่แล้วจะถูก merge · ข้อมูลใหม่จะถูกเพิ่ม · Gate ทุก step คำนวณใหม่ทั้งหมด</div>
+        <button class="btn btn-secondary btn-sm" id="btnLawstepBar" onclick="document.getElementById('lawstepInput').click()">📥 Import LawStep</button>
+      </div>
+
+      <!-- ── Case Form ── -->
+      <div id="caseFormWrap" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title" id="caseFormTitle">เพิ่มคดีใหม่</div><div class="card-sub">* จำเป็น · Gate คำนวณเองจาก OSB/Tier/Class/Expiry</div></div>
+            <button class="btn btn-secondary btn-sm" onclick="hideCaseForm()">✕ ปิด</button>
+          </div>
+
+          <!-- Gate Summary (live) -->
+          <div id="gateSummary"><div class="gate-summary"><span style="font-size:12px;color:var(--text-muted)">กรอกข้อมูลเพื่อดู Gate recommendation...</span></div></div>
+
+          <div class="section-divider">ข้อมูลหลัก</div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Case Ref No.<span class="req">*</span></label><input id="c_caseRef" placeholder="เลขสัญญา / Contract No." oninput="recalcCaseForm()"></div>
+            <div class="field"><label>Debtor Name<span class="req">*</span></label><input id="c_debtorName" placeholder="ชื่อลูกหนี้" autofocus></div>
+            <div class="field"><label>Portfolio Code</label><input id="c_portfolio" placeholder="22Q2-MTC"></div>
+            <div class="field">
+              <label>OSB (THB)<span class="req">*</span></label>
+              <input id="c_osb" type="number" placeholder="0" oninput="recalcCaseForm()">
+              <span class="hint">&lt;50K=T1 · &lt;300K=T2 · &lt;1M=T3 · ≥1M=T4</span>
+            </div>
+            <div class="field">
+              <label>Tier<span class="auto-label">(auto จาก OSB)</span></label>
+              <select id="c_tier" onchange="recalcCaseForm()">
+                <option value="">-- เลือก --</option>
+                <option>Tier 1</option><option>Tier 2</option><option>Tier 3</option><option>Tier 4</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Debtor Class<span class="auto-label">(แนะนำจาก Tier)</span></label>
+              <select id="c_debtorClass" onchange="recalcCaseForm()">
+                <option value="">-- เลือก --</option>
+                <option title="Confirmed asset+workplace → Immediate filing">A — Confirmed (ทรัพย์+งาน)</option>
+                <option title="Workplace only → Wage garnishment">B — Workplace only (งาน)</option>
+                <option title="Suspected asset → Investigate first">C — Suspected (สงสัยมีทรัพย์)</option>
+                <option title="Nothing → HOLD">D — None (HOLD)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="section-divider">สถานะและผู้รับผิดชอบ</div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Legal Status</label>
+              <select id="c_legalStatus">
+                <option value="">-- เลือก --</option><option>Non-legal</option><option>Approved to Sue</option>
+                <option>Filed &amp; Hearing</option><option>Judgment</option><option>Enforcement</option><option>Closed</option>
+              </select></div>
+            <div class="field">
+              <label>Assigned To<span class="auto-label">(คำนวณจาก Urgency+OSB)</span></label>
+              <select id="c_assignedTo">
+                <option value="">-- เลือก --</option><option>Internal (IH)</option><option>OA</option>
+              </select></div>
+            <div class="field"><label>Assignment Date</label><input id="c_assignDate" type="date"></div>
+            <div class="field form-full"><label>Internal Lawyer / OA Name</label><input id="c_lawyer" placeholder="ชื่อทนายความ / OA"></div>
+          </div>
+
+          <div class="section-divider">Prescription <span style="font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:0">(Urgency + Gate 1 คำนวณอัตโนมัติ)</span></div>
+          <div class="form-grid col-3" style="margin-bottom:10px">
+            <div class="field">
+              <label>Prescription Type</label>
+              <select id="c_prescriptionType" onchange="onPrescriptionTypeChange();recalcCaseForm()">
+                <option value="">-- เลือก --</option><option>Filing</option><option>Enforcement</option>
+              </select>
+            </div>
+          </div>
+          <div id="prescriptionFilingBlock" class="form-grid col-3" style="margin-bottom:8px">
+            <div class="field">
+              <label>Filing Prescription Expiry</label>
+              <input id="c_filingExpiry" type="date" onchange="recalcCaseForm()">
+            </div>
+            <div class="field">
+              <label>Filing Urgency<span class="auto-label">(คำนวณ)</span></label>
+              <input id="c_filingUrgency" readonly>
+            </div>
+          </div>
+          <div id="prescriptionEnforcBlock" class="form-grid col-3" style="margin-bottom:8px">
+            <div class="field">
+              <label>Enforcement Prescription Expiry</label>
+              <input id="c_enforcExpiry" type="date" onchange="recalcCaseForm()">
+            </div>
+            <div class="field">
+              <label>Enforcement Urgency<span class="auto-label">(คำนวณ)</span></label>
+              <input id="c_enforcUrgency" readonly>
+            </div>
+          </div>
+
+          <div class="section-divider">Gate / Approval <span style="font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:0">(G1 จาก Expiry · G2 จาก Class · G3 จาก Tier · G4 จาก ROI)</span></div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Gate 1<span class="auto-label">(auto จาก Expiry)</span></label><input id="c_gate1" readonly></div>
+            <div class="field"><label>Gate 2<span class="auto-label">(auto จาก Class)</span></label><input id="c_gate2" readonly></div>
+            <div class="field"><label>Gate 3<span class="auto-label">(auto จาก Tier)</span></label><input id="c_gate3" readonly></div>
+            <div class="field">
+              <label>Gate 4 ROI <span style="font-size:9px;color:var(--text-muted)">(OSB ÷ ค่าใช้จ่ายรวม)</span></label>
+              <input id="c_gate4roi" type="number" step="0.1" placeholder="1.5" oninput="recalcCaseForm()">
+              <span class="hint">&lt;1.2x=Reject · 1.2–1.5x=Exception · &gt;1.5x=Approve · &gt;2x=Priority</span>
+            </div>
+            <div class="field"><label>Gate 4 Decision<span class="auto-label">(auto จาก ROI)</span></label><input id="c_gate4dec" readonly></div>
+            <div class="field"><label>Asset Management Approval Ref</label><input id="c_pamRef" placeholder="Asset Management-APP-XXX"></div>
+            <div class="field"><label>Asset Management Approval Date</label><input id="c_pamDate" type="date"></div>
+          </div>
+
+          <div class="section-divider">ความคืบหน้าคดี</div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Court Filing Date</label><input id="c_filingDate" type="date"></div>
+            <div class="field"><label>Judgment Date</label><input id="c_judgmentDate" type="date"></div>
+            <div class="field"><label>Enforcement Method</label>
+              <select id="c_enforcMethod"><option value="">-- เลือก --</option><option>Asset Seizure</option><option>Bank Account Freeze</option><option>Wage Garnishment</option><option>Other</option></select></div>
+            <div class="field"><label>Enforcement Date</label><input id="c_enforcDate" type="date"></div>
+            <div class="field"><label>Last Action</label><input id="c_lastAction"></div>
+            <div class="field"><label>Next Action Due</label><input id="c_nextAction"></div>
+            <div class="field"><label>Next Action Date</label><input id="c_nextActionDate" type="date"></div>
+            <div class="field"><label>SLA Status<span class="auto-label">(จาก SLA tracker)</span></label>
+              <select id="c_slaStatus"><option value="">-- เลือก --</option><option>On Track</option><option>Breached</option><option>At Risk</option></select></div>
+          </div>
+
+          <div class="section-divider">หมายเหตุ</div>
+          <div class="form-grid">
+            <div class="field form-full"><label>Remarks</label><textarea id="c_remarks" rows="2" placeholder="หมายเหตุ..."></textarea></div>
+            <div class="field"><label>Reviewed By (Asset Management)</label><input id="c_reviewedBy"></div>
+            <div class="field"><label>Review Date</label><input id="c_reviewDate" type="date"></div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="saveCase()">✓ บันทึกคดี</button>
+            <button class="btn btn-secondary" onclick="recalcCaseForm()">🔄 คำนวณ Gate</button>
+            <button class="btn btn-secondary" style="margin-left:auto" onclick="hideCaseForm()">✕ ปิด</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Case Register (<span id="caseCount">0</span>)</div>
+          <div style="font-size:11px;color:var(--text-muted)">Gate Rec. · Urgency · Days to Expiry — คำนวณ live</div>
+        </div>
+        <div id="caseTable"><div class="empty-state"><div class="icon">📁</div><p>โหลดไฟล์ Asset Management หรือกด "เพิ่มคดีใหม่"</p></div></div>
+      </div>
+    </div>
+
+    <!-- ════ SLA TRACKER ════ -->
+    <div class="page" id="page-sla">
+      <div class="page-header">
+        <div><div class="page-title">⏰ SLA Tracker</div><div class="page-sub">Status + Days คำนวณจาก deadline · ดึงข้อมูลจาก Case Register อัตโนมัติ</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary btn-sm" onclick="openMilestoneManager()">⚙️ Milestones</button>
+          <button class="btn btn-primary btn-sm" onclick="showSlaForm()">＋ เพิ่ม SLA Entry</button>
+        </div>
+      </div>
+
+      <div id="slaFormWrap" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="card-title">เพิ่ม / แก้ไข SLA Entry</div><button class="btn btn-secondary btn-sm" onclick="hideSlaForm()">✕</button></div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Case Ref<span class="req">*</span></label><input id="s_caseRef" onblur="onSlaCaseRefChange()" list="s_caseRef_list" placeholder="Tab → ดึงข้อมูล"><datalist id="s_caseRef_list"></datalist></div>
+            <div class="field"><label>Debtor<span class="auto-label">(auto)</span></label><input id="s_debtorName" readonly></div>
+            <div class="field"><label>Assigned To</label><select id="s_assignedTo"><option value="">--</option><option>Internal (IH)</option><option>OA</option></select></div>
+            <div class="field"><label>Category</label><select id="s_category" onchange="onSlaCategoryOrNoChange()"><option value="">--</option><option>Sue</option><option>Subrogation</option><option>Execution</option></select></div>
+            <div class="field"><label>SLA No.<span class="auto-label">(ต่อจากล่าสุด)</span></label><select id="s_slaNo" onchange="onSlaNoChange()"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option></select></div>
+            <div class="field"><label>Milestone<span class="req">*</span><span class="auto-label">(auto จาก SLA No.)</span></label>
+              <select id="s_milestone_sel" onchange="onSlaMilestoneSelect()"><option value="">-- เลือก --</option></select>
+              <input type="hidden" id="s_milestone">
+              <div id="s_milestone_custom_wrap" style="display:none;margin-top:5px"><input id="s_milestone_custom" placeholder="กำหนดเอง..." oninput="setField('s_milestone',this.value)"></div>
+            </div>
+            <div class="field"><label>Trigger Date</label><input id="s_triggerDate" type="date" onchange="onSlaTriggerChange()"></div>
+            <div class="field"><label>Deadline<span class="auto-label">(trigger + SLA days)</span></label><input id="s_deadline" type="date"></div>
+            <div class="field"><label>Status<span class="auto-label">(คำนวณ)</span></label><select id="s_status"><option value="">--</option><option>On Track</option><option>Breached</option><option>At Risk</option><option>Completed</option></select></div>
+            <div class="field"><label>Completion Date</label><input id="s_completionDate" type="date"></div>
+            <div class="field"><label>Lawyer / OA</label><input id="s_lawyer"></div>
+            <div class="field"><label>Escalation</label><select id="s_escalation"><option value="">--</option><option>No</option><option>YES - ESCALATE</option></select></div>
+            <div class="field form-full"><label>Remarks</label><textarea id="s_remarks" rows="2"></textarea></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="saveSla()">✓ บันทึก</button>
+            <button class="btn btn-secondary" onclick="SLA_FIELDS.forEach(id=>setField(id,''))">↺ ล้าง</button>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><div class="card-title">SLA Entries (<span id="slaCount">0</span>)</div></div><div id="slaTable"><div class="empty-state"><div class="icon">⏰</div><p>ยังไม่มีข้อมูล</p></div></div></div>
+    </div>
+
+    <!-- ════ PRESCRIPTION WATCH ════ -->
+    <div class="page" id="page-prescription">
+      <div class="page-header">
+        <div><div class="page-title">🚨 Prescription Watch</div><div class="page-sub">Urgency + Gate 1 คำนวณจากวันนี้ live · Days Left อัปเดตทันที</div></div>
+        <button class="btn btn-primary btn-sm" onclick="showPrescForm()">＋ เพิ่มรายการ</button>
+      </div>
+      <div id="prescriptFormWrap" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="card-title">เพิ่ม / แก้ไข Prescription Watch</div><button class="btn btn-secondary btn-sm" onclick="hidePrescForm()">✕</button></div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Case Ref<span class="req">*</span></label><input id="p_caseRef" onblur="onPrescCaseRefChange()" list="p_caseRef_list" placeholder="Tab → ดึงข้อมูล"><datalist id="p_caseRef_list"></datalist></div>
+            <div class="field"><label>Debtor<span class="auto-label">(auto)</span></label><input id="p_debtorName" readonly></div>
+            <div class="field"><label>Portfolio<span class="auto-label">(auto)</span></label><input id="p_portfolio" readonly></div>
+            <div class="field"><label>OSB<span class="auto-label">(auto)</span></label><input id="p_osb" type="number" readonly></div>
+            <div class="field"><label>Assigned To<span class="auto-label">(auto)</span></label><select id="p_assignedTo"><option value="">--</option><option>Internal (IH)</option><option>OA</option></select></div>
+            <div class="field"><label>Prescription Type</label><select id="p_prescriptionType" onchange="onPrescTypeChange()"><option value="">--</option><option>Filing</option><option>Enforcement</option></select></div>
+            <div class="field"><label>Expiry Date</label><input id="p_expiryDate" type="date" onchange="onPrescExpiryChange()"><span class="hint">กรอก → Urgency + Gate 1 คำนวณเอง</span></div>
+            <div class="field"><label>Urgency<span class="auto-label">(live)</span></label><div class="urgency-display"><span id="p_urgency_badge" class="badge badge-gray">—</span></div><input type="hidden" id="p_urgency"></div>
+            <div class="field"><label>Gate 1<span class="auto-label">(auto)</span></label><input id="p_gate1" readonly></div>
+            <div class="field"><label>Action Required<span class="auto-label">(hint)</span></label><input id="p_actionRequired"></div>
+            <div class="field"><label>Action Owner<span class="auto-label">(auto)</span></label><input id="p_actionOwner"></div>
+            <div class="field"><label>Action Deadline<span class="auto-label">(+3d ถ้า FAST)</span></label><input id="p_actionDeadline" type="date"></div>
+            <div class="field"><label>Status</label><select id="p_status"><option value="">--</option><option>Pending</option><option>In Progress</option><option>Done</option></select></div>
+            <div class="field form-full"><label>Remarks</label><textarea id="p_remarks" rows="2"></textarea></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="savePresc()">✓ บันทึก</button>
+            <button class="btn btn-secondary" onclick="PRESC_FIELDS.forEach(id=>setField(id,''))">↺ ล้าง</button>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><div class="card-title">Prescription Watch (<span id="prescriptCount">0</span>)</div><div style="font-size:11px;color:var(--text-muted)">Live urgency · Gate 1 คำนวณใหม่ทุก render</div></div><div id="prescriptTable"><div class="empty-state"><div class="icon">🚨</div><p>ยังไม่มีข้อมูล</p></div></div></div>
+    </div>
+
+    <!-- ════ REIMBURSEMENT ════ -->
+    <div class="page" id="page-reimburse">
+      <div class="page-header">
+        <div><div class="page-title">💰 Reimbursement</div><div class="page-sub">Preset ค่าใช้จ่ายแยกตาม Filing/Enforcement · REQ No. auto-generate</div></div>
+        <button class="btn btn-primary btn-sm" onclick="showReimbForm()">＋ เพิ่มรายการเบิก</button>
+      </div>
+      <div id="reimburseFormWrap" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="card-title">เพิ่ม / แก้ไข รายการเบิกจ่าย</div><button class="btn btn-secondary btn-sm" onclick="hideReimbForm()">✕</button></div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Request No.<span class="req">*</span><span class="auto-label">(auto)</span></label><input id="r_reqNo" placeholder="REQ-001"></div>
+            <div class="field"><label>Lawyer / OA</label><input id="r_lawyer"></div>
+            <div class="field"><label>Case Ref</label><input id="r_caseRef" onblur="onReimbCaseRefChange()" list="r_caseRef_list" placeholder="Tab → ดึงข้อมูล"><datalist id="r_caseRef_list"></datalist></div>
+            <div class="field"><label>Debtor<span class="auto-label">(auto)</span></label><input id="r_debtorName" readonly></div>
+            <div class="field"><label>Expense Type<span class="req">*</span></label>
+              <select id="r_expenseType" onchange="onReimbExpenseSelect()"><option value="">-- เลือก Work Type จาก Case Ref ก่อน --</option></select>
+              <div id="r_expenseCustomWrap" style="display:none;margin-top:6px"><input id="r_expenseCustom" placeholder="กรอกเอง..."></div>
+            </div>
+            <div class="field"><label>Amount (THB)</label><input id="r_amount" type="number" placeholder="0"></div>
+            <div class="field"><label>Payment Status</label><select id="r_payStatus"><option value="">--</option><option>Pending</option><option>Paid</option><option>Overdue</option><option>Cancelled</option></select></div>
+            <div class="field"><label>Payment Date</label><input id="r_payDate" type="date"></div>
+            <div class="field"><label>Advance (THB)</label><input id="r_advance" type="number" placeholder="0"></div>
+            <div class="field"><label>Advance Date</label><input id="r_advanceDate" type="date"></div>
+            <div class="field"><label>Receipt</label><select id="r_receipt"><option value="">--</option><option>Yes</option><option>No</option></select></div>
+            <div class="field"><label>Reimbursement Ref</label><input id="r_reimbRef" placeholder="Asset Management-EXP-XXX"></div>
+            <div class="field"><label>Approved By</label><input id="r_approvedBy"></div>
+            <div class="field form-full"><label>Remarks</label><textarea id="r_remarks" rows="2"></textarea></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="saveReimb()">✓ บันทึก</button>
+            <button class="btn btn-secondary" onclick="REIMB_FIELDS.forEach(id=>setField(id,''))">↺ ล้าง</button>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><div class="card-title">รายการเบิกจ่าย (<span id="reimburseCount">0</span>)</div></div><div id="reimburseTable"><div class="empty-state"><div class="icon">💰</div><p>ยังไม่มีข้อมูล</p></div></div></div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- ════ CONFIRM MODAL ════ -->
+<div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)_confirmResult(false)">
+  <div class="modal-box" style="width:360px">
+    <div style="font-size:14px;font-weight:600;margin-bottom:10px">⚠️ ยืนยัน</div>
+    <div id="confirmMsg" style="font-size:13px;color:var(--text-dim);line-height:1.5"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary btn-sm" onclick="_confirmResult(false)">ยกเลิก</button>
+      <button class="btn btn-danger btn-sm" id="confirmOk" onclick="_confirmResult(true)">🗑 ลบ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MILESTONE MANAGER ════ -->
+<div class="modal-overlay" id="milestoneManagerModal" onclick="if(event.target===this)closeMilestoneManager()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div style="font-size:15px;font-weight:600">⚙️ จัดการ SLA Milestones</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">มีผลทันที — reset เมื่อรีโหลดหน้า</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="closeMilestoneManager()">✕</button>
+    </div>
+    <div id="milestoneManagerBody"></div>
+  </div>
+</div>
+
+<!-- ── Scripts ── -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════════════════════
+window.APP = {
+  workbook:      null,          // Litigation_Weekly_Monitor.xlsx
+  caseData:      [],
+  slaData:       [],
+  prescriptData: [],
+  reimburseData: [],
+  editIdx: { case: -1, sla: -1, prescript: -1, reimburse: -1 },
+  page:     { case: 1, sla: 1, prescript: 1, reimburse: 1 },
+  pageSize: 50,
+  search:   { case: '', sla: '', prescript: '', reimburse: '' },
+  filter:   { case: {}, sla: {}, prescript: {}, reimburse: {} },
+};
+
+// ── Form I/O ─────────────────────────────────────────────────────
+function v(id)  { const el=document.getElementById(id); return el?el.value.trim():''; }
+function nv(id) { const el=document.getElementById(id); return el&&el.value!==''?Number(el.value):''; }
+function setField(id,val) { const el=document.getElementById(id); if(el&&val!=null) el.value=val; }
+
+// ── Date helpers ─────────────────────────────────────────────────
+function fmtDate(val) {
+  if (!val) return '';
+  if (val instanceof Date) return val.toISOString().slice(0,10);
+  const s=String(val);
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  return s;
+}
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function daysFromNow(dateStr) {
+  if (!dateStr) return null;
+  const d=new Date(dateStr); d.setHours(0,0,0,0);
+  const t=new Date(); t.setHours(0,0,0,0);
+  return Math.round((d-t)/86400000);
+}
+function fmtThb(n) {
+  if (n===''||n==null||isNaN(Number(n))) return '—';
+  return Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(msg, type='info', dur=3800) {
+  const icons={success:'✓',error:'✕',info:'ℹ',warn:'⚠'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span>${icons[type]||'ℹ'}</span><span style="flex:1">${msg}</span>
+    <button onclick="this.parentNode.remove()" style="background:none;border:none;color:inherit;cursor:pointer;padding:0 4px;font-size:14px">✕</button>`;
+  const c=document.getElementById('toast-container');
+  c.appendChild(el);
+  while(c.children.length>5) c.firstChild.remove();
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(20px)';el.style.transition='all 0.3s';},dur-350);
+  setTimeout(()=>el.remove(),dur);
+}
+
+// ── Confirm modal ─────────────────────────────────────────────────
+let _cResolve=null;
+function showConfirm(msg,danger=true) {
+  return new Promise(r=>{
+    _cResolve=r;
+    const m=document.getElementById('confirmModal');
+    if(!m){r(window.confirm(msg));return;}
+    document.getElementById('confirmMsg').textContent=msg;
+    const ok=document.getElementById('confirmOk');
+    ok.className=`btn btn-sm ${danger?'btn-danger':'btn-primary'}`;
+    ok.textContent=danger?'🗑 ลบ':'✓ ยืนยัน';
+    m.style.display='flex';
+  });
+}
+function _confirmResult(yes) {
+  const m=document.getElementById('confirmModal');
+  if(m) m.style.display='none';
+  if(_cResolve){_cResolve(yes);_cResolve=null;}
+}
+
+// ── Navigation ────────────────────────────────────────────────────
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const nav=document.querySelector(`[data-page="${name}"]`);
+  if(nav) nav.classList.add('active');
+  if(name==='dashboard') renderDashboard();
+}
+
+// ── Counts + datalist ─────────────────────────────────────────────
+function updateCounts() {
+  document.getElementById('cntCase').textContent      = APP.caseData.length;
+  document.getElementById('cntSla').textContent       = APP.slaData.length;
+  document.getElementById('cntPrescript').textContent = APP.prescriptData.length;
+  document.getElementById('cntReimburse').textContent = APP.reimburseData.length;
+  const refs=APP.caseData.map(c=>c.caseRef);
+  ['s_caseRef_list','p_caseRef_list','r_caseRef_list'].forEach(id=>{
+    const dl=document.getElementById(id);
+    if(dl) dl.innerHTML=refs.map(r=>`<option value="${r}">`).join('');
+  });
+}
+
+// ── Search + filter + pagination ──────────────────────────────────
+function applySearchFilter(dataset,pageKey) {
+  let data=dataset;
+  const q=(APP.search[pageKey]||'').toLowerCase().trim();
+  if(q) data=data.filter(r=>Object.values(r).some(val=>String(val).toLowerCase().includes(q)));
+  const filters=APP.filter[pageKey]||{};
+  Object.entries(filters).forEach(([k,val])=>{ if(val) data=data.filter(r=>r[k]===val); });
+  return data;
+}
+function paginate(dataset,page,size) {
+  return {slice:dataset.slice((page-1)*size, page*size), total:dataset.length};
+}
+function renderPagination(cid,total,cur,size,fn) {
+  const el=document.getElementById(cid); if(!el) return;
+  const pages=Math.ceil(total/size);
+  if(pages<=1){el.innerHTML='';return;}
+  const s=Math.max(1,cur-2), e=Math.min(pages,cur+2);
+  let h=`<div class="pagination">`;
+  h+=`<button class="pg-btn" ${cur===1?'disabled':''} onclick="${fn}(${cur-1})">‹</button>`;
+  if(s>1){h+=`<button class="pg-btn" onclick="${fn}(1)">1</button>`;if(s>2) h+=`<span class="pg-ellipsis">…</span>`;}
+  for(let p=s;p<=e;p++) h+=`<button class="pg-btn${p===cur?' active':''}" onclick="${fn}(${p})">${p}</button>`;
+  if(e<pages){if(e<pages-1) h+=`<span class="pg-ellipsis">…</span>`;h+=`<button class="pg-btn" onclick="${fn}(${pages})">${pages}</button>`;}
+  h+=`<button class="pg-btn" ${cur===pages?'disabled':''} onclick="${fn}(${cur+1})">›</button>`;
+  h+=`<span class="pg-info">${(cur-1)*size+1}–${Math.min(cur*size,total)} / ${total}</span></div>`;
+  el.innerHTML=h;
+}
+function buildSearchBar(pk,ph,filterDefs=[]) {
+  const q=APP.search[pk]||'';
+  const rfn={case:'renderCaseTable',sla:'renderSlaTable',prescript:'renderPrescriptTable',reimburse:'renderReimburseTable'}[pk]||'';
+  const selects=filterDefs.map(f=>{
+    const cur=(APP.filter[pk]||{})[f.key]||'';
+    return `<select class="filter-select" onchange="APP.filter['${pk}']['${f.key}']=this.value;APP.page['${pk}']=1;${rfn}()">
+      <option value="">${f.label}</option>
+      ${f.values.map(fv=>`<option value="${fv}"${cur===fv?' selected':''}>${fv}</option>`).join('')}
+    </select>`;
+  }).join('');
+  return `<div class="search-bar-wrap">
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" placeholder="${ph}" value="${q}"
+        oninput="APP.search['${pk}']=this.value;APP.page['${pk}']=1;${rfn}()">
+      ${q?`<button class="search-clear" onclick="APP.search['${pk}']='';APP.page['${pk}']=1;this.closest('.search-bar-wrap').querySelector('.search-input').value='';${rfn}()">✕</button>`:''}
+    </div>${selects}
+  </div>`;
+}
+
+function setCasePage(p)      { APP.page.case=p;      renderCaseTable(); }
+function setSlaPage(p)       { APP.page.sla=p;       renderSlaTable(); }
+function setPrescriptPage(p) { APP.page.prescript=p; renderPrescriptTable(); }
+function setReimbursePage(p) { APP.page.reimburse=p; renderReimburseTable(); }
+
+// ── Keyboard shortcuts ────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') {
+    ['caseFormWrap','slaFormWrap','prescriptFormWrap','reimburseFormWrap','lawstepFormWrap'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el&&el.style.display!=='none') el.style.display='none';
+    });
+    _confirmResult(false);
+    const mm=document.getElementById('milestoneManagerModal');
+    if(mm&&mm.style.display!=='none') closeMilestoneManager();
+  }
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(APP.workbook) exportExcel();else toast('โหลดไฟล์ Asset Management ก่อน','warn');}
+  if((e.ctrlKey||e.metaKey)&&e.key==='f'){
+    const si=document.querySelector('.page.active .search-input');
+    if(si){e.preventDefault();si.focus();si.select();}
+  }
+});
+
+// ── Skeleton ─────────────────────────────────────────────────────
+function skeletonTable(cols=7,rows=5) {
+  const hc=Array(cols).fill('<th><div class="skel"></div></th>').join('');
+  const dc=Array(cols).fill('<td><div class="skel" style="height:12px;border-radius:4px"></div></td>').join('');
+  return `<div class="table-wrap"><table><thead><tr>${hc}</tr></thead><tbody>${Array(rows).fill(`<tr>${dc}</tr>`).join('')}</tbody></table></div>`;
+}
+
+// ── Drag-drop ─────────────────────────────────────────────────────
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{
+  e.preventDefault();
+  const f=e.dataTransfer.files[0];
+  if(f&&(f.name.endsWith('.xlsx')||f.name.endsWith('.xls'))) loadCases({target:{files:[f]}});
+});
+
+
+// ═══════════════════════════════════════════════════════════════
+// GATE LOGIC ENGINE  (from 📖 Reference sheet)
+// ═══════════════════════════════════════════════════════════════
+
+// GATE 1 — Prescription control
+function gate1(expiryDateStr) {
+  if (!expiryDateStr) return { pass: null, label: '—', color: 'badge-gray' };
+  const d = daysFromNow(expiryDateStr);
+  if (d < 0)   return { pass: false, label: 'DO NOT FILE',          color: 'badge-red',  days: d };
+  if (d < 180) return { pass: true,  label: 'FAST TRACK',           color: 'badge-red',  days: d };
+  if (d < 365) return { pass: true,  label: 'Prioritize in queue',  color: 'badge-gold', days: d };
+  return        { pass: true,  label: 'Normal evaluation',    color: 'badge-green',days: d };
+}
+
+function gate1Urgency(expiryDateStr) {
+  const g = gate1(expiryDateStr);
+  if (!expiryDateStr) return '';
+  const d = g.days;
+  if (d < 0)   return 'EXPIRED';
+  if (d < 180) return 'FAST TRACK';
+  if (d < 365) return '6-12 Months';
+  return 'Normal';
+}
+
+// GATE 2 — Asset & Workplace (Debtor Class)
+// A = confirmed asset+workplace → Immediate filing
+// B = workplace only → Wage garnishment
+// C = suspected asset → Asset investigation first
+// D = nothing → HOLD
+function gate2(debtorClass) {
+  const map = {
+    'A': { strategy: 'Immediate filing',           proceed: true  },
+    'B': { strategy: 'Wage garnishment case',       proceed: true  },
+    'C': { strategy: 'Asset investigation first',   proceed: true  },
+    'D': { strategy: 'HOLD — do not file',          proceed: false },
+  };
+  return map[debtorClass] || { strategy: '—', proceed: null };
+}
+
+// GATE 3 — Financial viability (Tier)
+// Tier 1 <50K → do NOT litigate (targeted discount)
+// Tier 2 50K-300K → conditional
+// Tier 3/4 → default litigate
+function gate3(tier) {
+  const map = {
+    'Tier 1': { rule: 'Offer targeted discount — do NOT litigate', proceed: false },
+    'Tier 2': { rule: 'Conditional — asset or workplace required',  proceed: null  },
+    'Tier 3': { rule: 'Default litigate (unless legally defective)', proceed: true  },
+    'Tier 4': { rule: 'Default litigate (unless legally defective)', proceed: true  },
+  };
+  return map[tier] || { rule: '—', proceed: null };
+}
+
+// GATE 4 — Cost-benefit ROI
+// ROI = OSB / (filing fee + lawyer cost + process cost)
+// <1.2x → Reject; 1.2-1.5x → Exception; >1.5x → Default Approve; >2.0x → Priority
+function calcROI(osb, filingFee=0, lawyerCost=3000, processCost=2000) {
+  const cost = filingFee + lawyerCost + processCost;
+  if (!cost || !osb) return null;
+  return Number(osb) / cost;
+}
+
+function gate4(roi) {
+  if (roi === null || roi === undefined || roi === '') return { decision: '—', approver: '—', color: 'badge-gray' };
+  const r = Number(roi);
+  if (r >= 2.0) return { decision: 'Priority Filing',           approver: 'DCEO / CEO', color: 'badge-green' };
+  if (r >= 1.5) return { decision: 'Default Approve',           approver: 'DCEO / CEO', color: 'badge-green' };
+  if (r >= 1.2) return { decision: 'Exception Approval Required',approver: 'DCEO / CEO', color: 'badge-gold'  };
+  return              { decision: 'Reject',                     approver: '—',          color: 'badge-red'   };
+}
+
+// Combined Gate summary for a case
+function evaluateAllGates(row) {
+  const g1filing  = row.filingExpiry  ? gate1(row.filingExpiry)  : null;
+  const g1enforce = row.enforcExpiry  ? gate1(row.enforcExpiry)  : null;
+  const g1Result  = g1filing || g1enforce;
+  const g2Result  = gate2(row.debtorClass);
+  const g3Result  = gate3(row.tier);
+  const roi       = (row.gate4roi && Number(row.gate4roi)) ? Number(row.gate4roi) : null;
+  const g4Result  = gate4(roi);
+
+  // Overall recommendation
+  let recommend = 'PROCEED';
+  let stopReason = '';
+  if (g1Result && !g1Result.pass) { recommend = 'DO NOT FILE'; stopReason = 'Prescription expired'; }
+  else if (!g2Result.proceed && g2Result.proceed !== null) { recommend = 'HOLD'; stopReason = 'Debtor class D'; }
+  else if (!g3Result.proceed) { recommend = 'DO NOT LITIGATE'; stopReason = 'Tier 1 — low viability'; }
+  else if (g4Result.decision === 'Reject') { recommend = 'REJECT'; stopReason = 'ROI < 1.2x'; }
+
+  return { g1:g1Result, g2:g2Result, g3:g3Result, g4:g4Result, recommend, stopReason };
+}
+
+// OSB → Tier
+function osbToTier(osb) {
+  const n=Number(osb);
+  if(!n) return '';
+  if(n<50000)   return 'Tier 1';
+  if(n<300000)  return 'Tier 2';
+  if(n<1000000) return 'Tier 3';
+  return 'Tier 4';
+}
+
+// Tier → default Class suggestion
+function tierToDefaultClass(tier) {
+  return {'Tier 1':'D','Tier 2':'C','Tier 3':'B','Tier 4':'A'}[tier]||'';
+}
+
+// Assignment logic
+function calcAssignment(row) {
+  // IH: FAST TRACK / OSB>1M / in-house / Northern region
+  // Otherwise OA
+  const isFastTrack = row.filingUrgency === 'FAST TRACK' || row.enforcUrgency === 'FAST TRACK';
+  const osb = Number(row.osb)||0;
+  if (isFastTrack || osb > 1000000) return 'Internal (IH)';
+  return 'OA';
+}
+
+// SLA status from deadline
+function calcSlaStatus(deadline) {
+  if (!deadline) return '';
+  const d = daysFromNow(deadline);
+  if (d===null) return '';
+  if (d<0)  return 'Breached';
+  if (d<=7) return 'At Risk';
+  return 'On Track';
+}
+
+function addDays(dateStr, days) {
+  if(!dateStr||!days) return '';
+  const d=new Date(dateStr);
+  d.setDate(d.getDate()+days);
+  return d.toISOString().slice(0,10);
+}
+
+function getCaseByRef(caseRef) {
+  return APP.caseData.find(c=>String(c.caseRef)===String(caseRef))||null;
+}
+
+function nextReqNo() {
+  const nums=APP.reimburseData.map(r=>parseInt((r.reqNo||'').replace(/\D/g,''))||0);
+  return `REQ-${String((nums.length?Math.max(...nums):0)+1).padStart(3,'0')}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LAW_STEP IMPORT ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+// Status mapping from LawStep existedstatus → Asset Management Legal Status
+const LAWSTEP_STATUS_MAP = {
+  'Closed':          'Closed',
+  'JM':              'Judgment',
+  'Execution':       'Enforcement',
+  'Pre-Execution':   'Judgment',
+  'CM':              'Filed & Hearing',
+  'Pre-Subrogation': 'Approved to Sue',
+  'Subrogation':     'Approved to Sue',
+  'NPL':             'Non-legal',
+  'Early Sue':       'Approved to Sue',
+  'Loss-JM':         'Closed',
+  'Loss on sale':    'Closed',
+  'Loss on Sale':    'Closed',
+  'Loss no litigation': 'Closed',
+  'Bankruptcy':      'Closed',
+};
+
+// LawStep field → Asset Management field mapping
+function lawstepRowToCase(law, existingCase) {
+  const contractNo = String(law['lawstep_newcontractnumber']||'').trim();
+  const rawStatus  = String(law['lawstep_existedstatus']||'');
+  const legalStatus = LAWSTEP_STATUS_MAP[rawStatus] || rawStatus;
+
+  const oaId = String(law['lawstep_oa_id']||'');
+  const assignedTo = (oaId==='Legal'||oaId==='Internal') ? 'Internal (IH)' : 'OA';
+  const lawyerName = String(law['lawstep_oaforsue_id']||law['lawstep_oaforsubrogation_id']||'');
+
+  // Determine prescription type from status
+  const status = String(law['lawstep_status']||'');
+  let prescriptionType = '';
+  let filingExpiry = '';
+  let enforcExpiry = '';
+
+  if (status === 'สวมสิทธิ') {
+    prescriptionType = 'Filing'; // subrogation = filing
+  } else if (rawStatus === 'Execution' || rawStatus === 'Pre-Execution') {
+    prescriptionType = 'Enforcement';
+  } else if (status === 'ฟ้อง') {
+    prescriptionType = 'Filing';
+  }
+
+  // Dates
+  const filingDate    = fmtDate(law['lawstep_filingdate']);
+  const judgmentDate  = fmtDate(law['lawstep_judgementdate']);
+  const enforceDate   = fmtDate(law['lawstep_enforcereqdate']);
+  const approvalDate   = fmtDate(law['lawstep_sueapprovaldate']||law['lawstep_subrogationapprovaldate']);
+  const port          = String(law['lawstep_oa_id']&&law[6]?law[6]:existingCase?.portfolio||'');
+  const portCode      = String(law[6]||existingCase?.portfolio||'');
+
+  // Court & case numbers
+  const blackNo  = String(law['lawstep_blacknumber']||'');
+  const redNo    = String(law['lawstep_rednumber']||'');
+  const court    = String(law['lawstep_courtforsue']||'');
+
+  // Last action from latest data
+  let lastAction = '';
+  let nextAction = '';
+  if (legalStatus === 'Enforcement') {
+    lastAction = enforceDate ? `ออกหมายตั้ง ${enforceDate}` : '';
+    nextAction = 'ติดตามผลบังคับคดี';
+  } else if (legalStatus === 'Judgment') {
+    lastAction = judgmentDate ? `พิพากษา ${judgmentDate}` : '';
+    nextAction = 'พิจารณาอุทธรณ์ / บังคับคดี';
+  } else if (legalStatus === 'Filed & Hearing') {
+    lastAction = filingDate ? `ยื่นฟ้อง ${filingDate}` : '';
+    const hearing1 = fmtDate(law['lawstep_appdate01']);
+    nextAction = hearing1 ? `นัดสืบ ${hearing1}` : 'รอนัดสืบ';
+  } else if (legalStatus === 'Approved to Sue') {
+    lastAction = approvalDate ? `อนุมัติฟ้อง ${approvalDate}` : '';
+    nextAction = 'เตรียมยื่นฟ้อง';
+  }
+
+  // Judgement result → remarks
+  const judgementResult = String(law['lawstep_judgementresult']||'');
+  const judgementSum    = String(law['lawstep_judgementsum']||'');
+  const remarks         = [judgementResult, judgementSum].filter(Boolean).join(' | ').slice(0,200);
+
+  // Keep existing Asset Management data for fields not in LawStep
+  const base = existingCase || {};
+
+  return {
+    caseRef:          contractNo,
+    debtorName:       String(law['lawstep_name']||base.debtorName||''),
+    portfolio:        portCode||base.portfolio||'',
+    osb:              base.osb||'',                          // OSB comes from Asset Management, not LawStep
+    tier:             base.tier||osbToTier(base.osb)||'',
+    debtorClass:      base.debtorClass||'',
+    legalStatus,
+    assignedTo:       assignedTo||base.assignedTo||'',
+    assignDate:       approvalDate||base.assignDate||'',
+    lawyer:           lawyerName!=='Legal'?lawyerName:base.lawyer||'',
+    prescriptionType: prescriptionType||base.prescriptionType||'',
+    filingExpiry:     base.filingExpiry||'',
+    enforcExpiry:     base.enforcExpiry||'',
+    filingUrgency:    gate1Urgency(base.filingExpiry)||base.filingUrgency||'',
+    enforcUrgency:    gate1Urgency(base.enforcExpiry)||base.enforcUrgency||'',
+    gate1:            base.gate1||'',
+    gate2:            base.debtorClass ? gate2(base.debtorClass).strategy : base.gate2||'',
+    gate3:            (base.tier||osbToTier(base.osb)) ? gate3(base.tier||osbToTier(base.osb)).rule : base.gate3||'',
+    gate4roi:         base.gate4roi||'',
+    gate4dec:         base.gate4dec||'',
+    approvalRef:           String(law['lawstep_blacknumber']||base.approvalRef||''),
+    approvalDate:          approvalDate||base.approvalDate||'',
+    filingDate,
+    judgmentDate,
+    enforcMethod:     '',
+    enforcDate:       enforceDate,
+    blackNumber:      blackNo,
+    redNumber:        redNo,
+    court,
+    lastAction:       lastAction||base.lastAction||'',
+    nextAction:       nextAction||base.nextAction||'',
+    nextActionDate:   fmtDate(law['lawstep_appdate01'])||base.nextActionDate||'',
+    slaStatus:        '',  // will be auto-calculated
+    remarks:          remarks||base.remarks||'',
+    reviewedBy:       base.reviewedBy||'',
+    reviewDate:       base.reviewDate||'',
+    // Extra fields from LawStep (stored for reference)
+    _lawstepStatus:   rawStatus,
+    _sueDefund:       law['lawstep_suedefund']||'',
+    _principal:       law['lawstep_pricipal']||'',
+    _interest:        law['lawstep_interest']||'',
+    _hearing1:        fmtDate(law['lawstep_appdate01']),
+    _hearing2:        fmtDate(law['lawstep_appdate02']),
+    _hearing3:        fmtDate(law['lawstep_appdate03']),
+    _updatedAt:       fmtDate(law['lawstep_date']),
+  };
+}
+
+// Process full LawStep import
+function processLawstepImport(lawWs) {
+  const rows = XLSX.utils.sheet_to_json(lawWs, { header: 1, defval: '' });
+  if (rows.length < 2) return { updated: 0, added: 0, skipped: 0 };
+
+  // Build header map
+  const headers = rows[1];  // row index 1 = header (row 0 = Thai display names)
+  const colMap = {};
+  headers.forEach((h, i) => { if (h) colMap[String(h).trim()] = i; });
+
+  let updated=0, added=0, skipped=0;
+
+  for (let i=2; i<rows.length; i++) {
+    const r = rows[i];
+    // Convert row array to object using header map
+    const law = {};
+    headers.forEach((h, ci) => { if (h) law[h] = r[ci]; });
+    // Also preserve numeric indexes for unnamed columns
+    r.forEach((val, ci) => { law[ci] = val; });
+
+    const contractNo = String(law['lawstep_newcontractnumber']||'').trim();
+    if (!contractNo || contractNo === 'NaN') { skipped++; continue; }
+
+    const existingIdx = APP.caseData.findIndex(c => String(c.caseRef) === contractNo);
+    const existingCase = existingIdx >= 0 ? APP.caseData[existingIdx] : null;
+
+    const caseRow = lawstepRowToCase(law, existingCase);
+
+    // Auto-calculate gates now that we have full data
+    const gates = evaluateAllGates(caseRow);
+    if (!caseRow.gate1 && caseRow.filingExpiry)   caseRow.gate1   = gates.g1 ? gates.g1.label : '';
+    if (!caseRow.gate2 && caseRow.debtorClass)     caseRow.gate2   = gates.g2.strategy;
+    if (!caseRow.gate3 && caseRow.tier)            caseRow.gate3   = gates.g3.rule;
+    if (!caseRow.gate4dec && gates.g4.decision!=='—') caseRow.gate4dec = gates.g4.decision;
+
+    if (existingIdx >= 0) {
+      APP.caseData[existingIdx] = caseRow;
+      updated++;
+    } else {
+      APP.caseData.push(caseRow);
+      added++;
+    }
+  }
+
+  return { updated, added, skipped };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SLA MILESTONE LIBRARY
+// ═══════════════════════════════════════════════════════════════
+APP.slaMilestones = {
+  Sue: {
+    1: { label: 'Case approval by Asset Management',             days: 3  },
+    2: { label: 'Complete documents sent to OA',    days: 7  },
+    3: { label: 'Legal notice sent to debtor',      days: 7  },
+    4: { label: 'File lawsuit to court',            days: 30 },
+    5: { label: 'First hearing date obtained',      days: 60 },
+    6: { label: 'Obtain court judgment',            days: 90 },
+    7: { label: 'Obtain enforcement officer appt.', days: 30 },
+    8: { label: 'Prepare appeal/cassation draft',   days: 30 },
+  },
+  Subrogation: {
+    1: { label: 'Subrogation case approval by Asset Management', days: 3  },
+    2: { label: 'Insurance documents verified',     days: 5  },
+    3: { label: 'File subrogation claim',           days: 30 },
+    4: { label: 'Respond to counter-claim',         days: 14 },
+    5: { label: 'Obtain subrogation judgment',      days: 90 },
+  },
+  Execution: {
+    1: { label: 'Issue execution writ',             days: 7  },
+    2: { label: 'Locate debtor assets',             days: 14 },
+    3: { label: 'Seize / freeze assets',            days: 7  },
+    4: { label: 'Public auction / sale',            days: 30 },
+    5: { label: 'Receive proceeds',                 days: 14 },
+    6: { label: 'Close execution file',             days: 7  },
+  },
+};
+
+APP.expensePresets = {
+  Filing:      [
+    { label: 'Court Filing Fee',        amount: 0    },
+    { label: 'Process Server Fee',      amount: 500  },
+    { label: 'Document Translation',    amount: 0    },
+    { label: 'Legal Notice Postage',    amount: 200  },
+    { label: 'OA Professional Fee',     amount: 0    },
+    { label: 'Stamp Duty',              amount: 0    },
+  ],
+  Enforcement: [
+    { label: 'Enforcement Officer Fee', amount: 1500 },
+    { label: 'Asset Seizure Fee',       amount: 0    },
+    { label: 'Public Auction Fee',      amount: 0    },
+    { label: 'Bailiff Service Fee',     amount: 800  },
+    { label: 'Bank Account Freeze Fee', amount: 500  },
+    { label: 'OA Professional Fee',     amount: 0    },
+  ],
+  General:     [
+    { label: 'Court Fee',               amount: 0    },
+    { label: 'Professional Fee',        amount: 0    },
+    { label: 'Process Server',          amount: 500  },
+    { label: 'Translation',             amount: 0    },
+  ],
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// LOAD Asset Management (primary database)
+// ═══════════════════════════════════════════════════════════════
+function loadCases(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  ['caseTable','slaTable','prescriptTable','reimburseTable'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.innerHTML=skeletonTable(8,10);
+  });
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      APP.workbook = XLSX.read(ev.target.result, { type:'binary', cellDates:true });
+
+      // ── Case Register ─────────────────────────────────────────
+      APP.caseData = [];
+      const wsC = APP.workbook.Sheets['📁 Case Register'];
+      if (wsC) {
+        const rows = XLSX.utils.sheet_to_json(wsC, { header:1, defval:'' });
+        for (let i=2; i<rows.length; i++) {
+          const r = rows[i];
+          const ref = String(r[0]||'').trim();
+          if (!ref || ref==='NaN') continue;
+          const osb = r[3]!==''?r[3]:'';
+          const tier = String(r[4]||'')||osbToTier(osb);
+          APP.caseData.push({
+            caseRef:ref, debtorName:String(r[1]||''), portfolio:String(r[2]||''), osb,
+            tier, debtorClass:String(r[5]||''), legalStatus:String(r[6]||''),
+            assignedTo:String(r[7]||''), assignDate:fmtDate(r[8]), lawyer:String(r[9]||''),
+            prescriptionType:String(r[10]||''),
+            filingExpiry:fmtDate(r[11]), enforcExpiry:fmtDate(r[12]),
+            filingUrgency:gate1Urgency(fmtDate(r[11]))||String(r[13]||''),
+            enforcUrgency:gate1Urgency(fmtDate(r[12]))||String(r[14]||''),
+            gate1:String(r[15]||''), gate2:String(r[16]||''),
+            gate3:String(r[17]||''), gate4roi:r[18]!==''?r[18]:'',
+            gate4dec:String(r[19]||''), approvalRef:String(r[20]||''),
+            approvalDate:fmtDate(r[21]),
+            filingDate:fmtDate(r[23]), judgmentDate:fmtDate(r[24]),
+            enforcMethod:String(r[25]||''), enforcDate:fmtDate(r[26]),
+            lastAction:String(r[27]||''), nextAction:String(r[28]||''),
+            nextActionDate:fmtDate(r[29]), slaStatus:String(r[30]||''),
+            remarks:String(r[31]||''), reviewedBy:String(r[32]||''), reviewDate:fmtDate(r[33]),
+          });
+        }
+      }
+
+      // ── SLA Tracker ───────────────────────────────────────────
+      APP.slaData = [];
+      const wsS = APP.workbook.Sheets['⏰ SLA Tracker'];
+      if (wsS) {
+        const rows = XLSX.utils.sheet_to_json(wsS, { header:1, defval:'' });
+        for (let i=2; i<rows.length; i++) {
+          const r=rows[i]; const ref=String(r[0]||'').trim();
+          if(!ref||ref==='NaN') continue;
+          APP.slaData.push({ caseRef:ref, debtorName:String(r[1]||''),
+            assignedTo:String(r[2]||''), slaNo:r[3]!==''?String(r[3]):'',
+            category:String(r[4]||''), milestone:String(r[5]||''),
+            triggerDate:fmtDate(r[6]), deadline:fmtDate(r[7]),
+            status:calcSlaStatus(fmtDate(r[7]))||String(r[8]||''),
+            completionDate:fmtDate(r[9]), lawyer:String(r[11]||''),
+            escalation:String(r[12]||''), remarks:String(r[13]||''),
+          });
+        }
+      }
+
+      // ── Prescription Watch ────────────────────────────────────
+      APP.prescriptData = [];
+      const wsP = APP.workbook.Sheets['🚨 Prescription Watch'];
+      if (wsP) {
+        const rows = XLSX.utils.sheet_to_json(wsP, { header:1, defval:'' });
+        for (let i=2; i<rows.length; i++) {
+          const r=rows[i]; const ref=String(r[0]||'').trim();
+          if(!ref||ref==='NaN') continue;
+          const expiry=fmtDate(r[6]);
+          APP.prescriptData.push({ caseRef:ref, debtorName:String(r[1]||''),
+            portfolio:String(r[2]||''), osb:r[3]!==''?r[3]:'',
+            assignedTo:String(r[4]||''), prescriptionType:String(r[5]||''),
+            expiryDate:expiry, urgency:gate1Urgency(expiry)||String(r[8]||''),
+            gate1:gate1(expiry).label||String(r[9]||''),
+            actionRequired:String(r[10]||''), actionOwner:String(r[11]||''),
+            actionDeadline:fmtDate(r[12]), status:String(r[13]||''), remarks:String(r[14]||''),
+          });
+        }
+      }
+
+      // ── Reimbursement ─────────────────────────────────────────
+      APP.reimburseData = [];
+      const wsR = APP.workbook.Sheets['💰 Reimbursement'];
+      if (wsR) {
+        const rows = XLSX.utils.sheet_to_json(wsR, { header:1, defval:'' });
+        for (let i=2; i<rows.length; i++) {
+          const r=rows[i]; const reqNo=String(r[0]||'').trim();
+          if(!reqNo||reqNo==='NaN'||reqNo.toUpperCase()==='TOTALS') continue;
+          APP.reimburseData.push({ reqNo, lawyer:String(r[1]||''),
+            caseRef:String(r[2]||''), debtorName:String(r[3]||''),
+            expenseType:String(r[4]||''), amount:r[5]!==''?r[5]:'',
+            payStatus:String(r[6]||''), payDate:fmtDate(r[7]),
+            advance:r[9]!==''?r[9]:'', advanceDate:fmtDate(r[10]),
+            receipt:String(r[11]||''), reimbRef:String(r[12]||''),
+            approvedBy:String(r[13]||''), remarks:String(r[14]||''),
+          });
+        }
+      }
+
+      document.getElementById('fileStatus').classList.add('loaded');
+      document.getElementById('fileStatusText').textContent = file.name;
+      document.getElementById('btnExport').disabled = false;
+      document.getElementById('btnLawstep').disabled = false;
+
+      renderCaseTable(); renderSlaTable(); renderPrescriptTable(); renderReimburseTable();
+      updateCounts();
+      const total = APP.caseData.length+APP.slaData.length+APP.prescriptData.length+APP.reimburseData.length;
+      toast(`โหลด Asset Management สำเร็จ — ${total.toLocaleString()} รายการ · ข้อมูล Gate คำนวณอัตโนมัติแล้ว`, 'success');
+    } catch(err) {
+      toast('โหลดไม่สำเร็จ: '+err.message,'error');
+      console.error(err);
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ─── Load LawStep (delta update) ─────────────────────────────────
+function loadLawStep(e) {
+  const file = e.target.files[0];
+  if (!file) { toast('เลือกไฟล์ Law_Step.xlsx','warn'); return; }
+  if (!APP.workbook) { toast('กรุณาโหลดไฟล์ Asset Management ก่อน','error'); return; }
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const wb = XLSX.read(ev.target.result, { type:'binary', cellDates:true });
+      const wsL = wb.Sheets['LAWSTEP ALL'];
+      if (!wsL) { toast('ไม่พบ sheet "LAWSTEP ALL"','error'); return; }
+      const result = processLawstepImport(wsL);
+      renderCaseTable(); renderPrescriptTable(); updateCounts();
+      toast(`อัปเดตจาก LawStep สำเร็จ — เพิ่ม ${result.added} | อัปเดต ${result.updated} | ข้าม ${result.skipped} รายการ`, 'success', 6000);
+    } catch(err) {
+      toast('LawStep import ผิดพลาด: '+err.message,'error');
+      console.error(err);
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SAVE / EXPORT Asset Management (write-back as DB)
+// ═══════════════════════════════════════════════════════════════
+function clearSheetRows(ws, fromRow) {
+  const ref=ws['!ref']; if(!ref) return;
+  const rng=XLSX.utils.decode_range(ref);
+  for(let R=fromRow;R<=rng.e.r;R++)
+    for(let C=rng.s.c;C<=rng.e.c;C++)
+      delete ws[XLSX.utils.encode_cell({r:R,c:C})];
+}
+
+function exportExcel() {
+  if (!APP.workbook) { toast('กรุณาโหลดไฟล์ Asset Management ก่อน','error'); return; }
+  const btn=document.getElementById('btnExport');
+  btn.disabled=true; btn.textContent='⏳ กำลังบันทึก…';
+
+  setTimeout(()=>{
+    try {
+      // ── Case Register ─────────────────────────────────────────
+      const wsC=APP.workbook.Sheets['📁 Case Register'];
+      if(wsC) {
+        clearSheetRows(wsC,2);
+        APP.caseData.forEach((r,i)=>{
+          const fu=gate1Urgency(r.filingExpiry)||r.filingUrgency;
+          const eu=gate1Urgency(r.enforcExpiry)||r.enforcUrgency;
+          const g=evaluateAllGates(r);
+          XLSX.utils.sheet_add_aoa(wsC,[[
+            r.caseRef,r.debtorName,r.portfolio,r.osb,
+            r.tier||osbToTier(r.osb),r.debtorClass,r.legalStatus,
+            r.assignedTo||calcAssignment(r),r.assignDate,r.lawyer,
+            r.prescriptionType,r.filingExpiry,r.enforcExpiry,fu,eu,
+            r.gate1||(g.g1?g.g1.label:''),
+            r.gate2||g.g2.strategy,
+            r.gate3||g.g3.rule,
+            r.gate4roi,r.gate4dec||g.g4.decision,
+            r.approvalRef,r.approvalDate,'',
+            r.filingDate,r.judgmentDate,r.enforcMethod,r.enforcDate,
+            r.lastAction,r.nextAction,r.nextActionDate,
+            r.slaStatus||'',r.remarks,r.reviewedBy,r.reviewDate,
+          ]],{origin:{r:2+i,c:0}});
+        });
+      }
+
+      // ── SLA Tracker ───────────────────────────────────────────
+      const wsS=APP.workbook.Sheets['⏰ SLA Tracker'];
+      if(wsS) {
+        clearSheetRows(wsS,2);
+        APP.slaData.forEach((r,i)=>{
+          const st=r.completionDate?'Completed':calcSlaStatus(r.deadline)||r.status;
+          XLSX.utils.sheet_add_aoa(wsS,[[
+            r.caseRef,r.debtorName,r.assignedTo,r.slaNo,r.category,
+            r.milestone,r.triggerDate,r.deadline,st,r.completionDate,
+            '',r.lawyer,r.escalation,r.remarks,
+          ]],{origin:{r:2+i,c:0}});
+        });
+      }
+
+      // ── Prescription Watch ────────────────────────────────────
+      const wsP=APP.workbook.Sheets['🚨 Prescription Watch'];
+      if(wsP) {
+        clearSheetRows(wsP,2);
+        APP.prescriptData.forEach((r,i)=>{
+          const urg=gate1Urgency(r.expiryDate)||r.urgency;
+          const g1=gate1(r.expiryDate).label||r.gate1;
+          XLSX.utils.sheet_add_aoa(wsP,[[
+            r.caseRef,r.debtorName,r.portfolio,r.osb,r.assignedTo,
+            r.prescriptionType,r.expiryDate,'',urg,g1,
+            r.actionRequired,r.actionOwner,r.actionDeadline,r.status,'',r.remarks,
+          ]],{origin:{r:2+i,c:0}});
+        });
+      }
+
+      // ── Reimbursement ─────────────────────────────────────────
+      const wsR=APP.workbook.Sheets['💰 Reimbursement'];
+      if(wsR) {
+        clearSheetRows(wsR,2);
+        APP.reimburseData.forEach((r,i)=>{
+          XLSX.utils.sheet_add_aoa(wsR,[[
+            r.reqNo,r.lawyer,r.caseRef,r.debtorName,r.expenseType,
+            r.amount,r.payStatus,r.payDate,'',r.advance,r.advanceDate,
+            r.receipt,r.reimbRef,r.approvedBy,r.remarks,
+          ]],{origin:{r:2+i,c:0}});
+        });
+        const tot=2+APP.reimburseData.length;
+        const tAmt=APP.reimburseData.reduce((s,r)=>s+(Number(r.amount)||0),0);
+        const tAdv=APP.reimburseData.reduce((s,r)=>s+(Number(r.advance)||0),0);
+        XLSX.utils.sheet_add_aoa(wsR,[['TOTALS','','','','',tAmt,'','','',tAdv]],{origin:{r:tot,c:0}});
+      }
+
+      XLSX.writeFile(APP.workbook,'Litigation_Updated.xlsx');
+      toast('บันทึกสำเร็จ: Litigation_Updated.xlsx  [Ctrl+S ครั้งต่อไป]','success');
+    } catch(err) {
+      toast('บันทึกไม่สำเร็จ: '+err.message,'error');
+    } finally {
+      btn.disabled=false; btn.textContent='⬇️ บันทึก / Export';
+    }
+  },50);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CASE REGISTER — CRUD
+// ═══════════════════════════════════════════════════════════════
+const CASE_FIELDS = [
+  'c_caseRef','c_debtorName','c_portfolio','c_osb','c_tier','c_debtorClass',
+  'c_legalStatus','c_assignedTo','c_assignDate','c_lawyer','c_prescriptionType',
+  'c_filingExpiry','c_enforcExpiry','c_filingUrgency','c_enforcUrgency',
+  'c_gate1','c_gate2','c_gate3','c_gate4roi','c_gate4dec',
+  'c_pamRef','c_pamDate','c_filingDate','c_judgmentDate',
+  'c_enforcMethod','c_enforcDate','c_lastAction','c_nextAction',
+  'c_nextActionDate','c_slaStatus','c_remarks','c_reviewedBy','c_reviewDate',
+];
+
+// Live recalculation as user types
+function recalcCaseForm() {
+  const osb  = nv('c_osb');
+  const tier = v('c_tier') || osbToTier(osb);
+  if (osb && !v('c_tier'))   setField('c_tier', tier);
+  if (tier && !v('c_debtorClass')) setField('c_debtorClass', tierToDefaultClass(tier));
+
+  // Gate 1 urgency from expiry dates
+  const fe=v('c_filingExpiry'), ee=v('c_enforcExpiry');
+  setField('c_filingUrgency',  gate1Urgency(fe)  || '');
+  setField('c_enforcUrgency',  gate1Urgency(ee)  || '');
+  const g1=gate1(fe||ee); setField('c_gate1', g1.label||'');
+
+  // Gate 2
+  const dc=v('c_debtorClass');
+  if (dc) setField('c_gate2', gate2(dc).strategy);
+
+  // Gate 3
+  const t=v('c_tier');
+  if (t) setField('c_gate3', gate3(t).rule);
+
+  // Gate 4
+  const roi=nv('c_gate4roi');
+  if (roi) setField('c_gate4dec', gate4(roi).decision);
+
+  // Assignment suggestion
+  if (!v('c_assignedTo')) {
+    const tmp = { filingUrgency:gate1Urgency(fe), enforcUrgency:gate1Urgency(ee), osb };
+    setField('c_assignedTo', calcAssignment(tmp));
+  }
+
+  // Show/hide prescription blocks
+  onPrescriptionTypeChange();
+  updateGateSummary();
+}
+
+function updateGateSummary() {
+  const row = readCaseForm();
+  const g = evaluateAllGates(row);
+  const el = document.getElementById('gateSummary');
+  if (!el) return;
+  const colorMap = { 'PROCEED':'badge-green','DO NOT FILE':'badge-red','DO NOT LITIGATE':'badge-red','HOLD':'badge-gold','REJECT':'badge-red' };
+  el.innerHTML = `
+    <div class="gate-summary">
+      <span class="gate-chip ${g.g1?g.g1.color:'badge-gray'}">G1: ${g.g1?g.g1.label:'—'}</span>
+      <span class="gate-chip ${g.g2.proceed===false?'badge-red':g.g2.proceed?'badge-green':'badge-gold'}">G2: ${g.g2.strategy||'—'}</span>
+      <span class="gate-chip ${g.g3.proceed===false?'badge-red':g.g3.proceed?'badge-green':'badge-gold'}">G3: ${g.g3.rule||'—'}</span>
+      <span class="gate-chip ${g.g4.color}">G4: ${g.g4.decision||'—'}</span>
+      <span class="gate-chip ${colorMap[g.recommend]||'badge-gray'}" style="font-weight:700">⇒ ${g.recommend}${g.stopReason?' ('+g.stopReason+')':''}</span>
+    </div>`;
+}
+
+function onPrescriptionTypeChange() {
+  const type=v('c_prescriptionType');
+  const fb=document.getElementById('prescriptionFilingBlock');
+  const eb=document.getElementById('prescriptionEnforcBlock');
+  if(fb) fb.style.display=(!type||type==='Filing')?'':'none';
+  if(eb) eb.style.display=(!type||type==='Enforcement')?'':'none';
+  if(type==='Filing')      {setField('c_enforcExpiry','');setField('c_enforcUrgency','');}
+  if(type==='Enforcement') {setField('c_filingExpiry','');setField('c_filingUrgency','');}
+}
+
+function showCaseForm(prefill) {
+  APP.editIdx.case=-1;
+  CASE_FIELDS.forEach(id=>setField(id,''));
+  if (prefill) Object.keys(prefill).forEach(k=>setField('c_'+k, prefill[k]));
+  setField('c_assignDate', todayStr());
+  document.getElementById('caseFormTitle').textContent='เพิ่มคดีใหม่';
+  document.getElementById('caseFormWrap').style.display='block';
+  onPrescriptionTypeChange(); updateGateSummary();
+  document.getElementById('caseFormWrap').scrollIntoView({behavior:'smooth'});
+  setTimeout(()=>document.getElementById('c_debtorName')?.focus(),100);
+}
+function hideCaseForm() { document.getElementById('caseFormWrap').style.display='none'; }
+
+function readCaseForm() {
+  return {
+    caseRef:v('c_caseRef'), debtorName:v('c_debtorName'), portfolio:v('c_portfolio'),
+    osb:nv('c_osb'), tier:v('c_tier'), debtorClass:v('c_debtorClass'),
+    legalStatus:v('c_legalStatus'), assignedTo:v('c_assignedTo'), assignDate:v('c_assignDate'),
+    lawyer:v('c_lawyer'), prescriptionType:v('c_prescriptionType'),
+    filingExpiry:v('c_filingExpiry'), enforcExpiry:v('c_enforcExpiry'),
+    filingUrgency:gate1Urgency(v('c_filingExpiry'))||v('c_filingUrgency'),
+    enforcUrgency:gate1Urgency(v('c_enforcExpiry'))||v('c_enforcUrgency'),
+    gate1:v('c_gate1'), gate2:v('c_gate2'), gate3:v('c_gate3'),
+    gate4roi:nv('c_gate4roi'), gate4dec:v('c_gate4dec'),
+    approvalRef:v('c_pamRef'), approvalDate:v('c_pamDate'),
+    filingDate:v('c_filingDate'), judgmentDate:v('c_judgmentDate'),
+    enforcMethod:v('c_enforcMethod'), enforcDate:v('c_enforcDate'),
+    lastAction:v('c_lastAction'), nextAction:v('c_nextAction'),
+    nextActionDate:v('c_nextActionDate'), slaStatus:v('c_slaStatus'),
+    remarks:v('c_remarks'), reviewedBy:v('c_reviewedBy'), reviewDate:v('c_reviewDate'),
+  };
+}
+
+function saveCase() {
+  const row=readCaseForm();
+  if(!row.caseRef)    {toast('กรุณากรอก Case Ref No.','error');return;}
+  if(!row.debtorName) {toast('กรุณากรอก Debtor Name','error');return;}
+  const isEdit=APP.editIdx.case>=0;
+  if(isEdit) {
+    APP.caseData[APP.editIdx.case]=row; APP.editIdx.case=-1; toast('แก้ไขคดีสำเร็จ','success');
+  } else {
+    if(getCaseByRef(row.caseRef)){toast(`Case "${row.caseRef}" มีอยู่แล้ว`,'warn');return;}
+    APP.caseData.push(row); toast('เพิ่มคดีสำเร็จ','success');
+    autoSeedLinkedSheets(row);
+  }
+  CASE_FIELDS.forEach(id=>setField(id,'')); hideCaseForm();
+  renderCaseTable(); updateCounts();
+}
+
+function autoSeedLinkedSheets(row) {
+  const t=todayStr(); const notes=[];
+  const cat=row.legalStatus==='Enforcement'?'Execution':'Sue';
+  const m1=(APP.slaMilestones[cat]||{})[1];
+  if(m1) {
+    APP.slaData.push({ caseRef:row.caseRef, debtorName:row.debtorName,
+      assignedTo:row.assignedTo, slaNo:'1', category:cat,
+      milestone:m1.label, triggerDate:t, deadline:addDays(t,m1.days),
+      status:'On Track', completionDate:'', lawyer:row.lawyer,
+      escalation:'No', remarks:'Auto-seeded' });
+    renderSlaTable(); notes.push('⏰ SLA #1');
+  }
+  const pts=[];
+  if(row.filingExpiry)  pts.push({type:'Filing',      expiry:row.filingExpiry});
+  if(row.enforcExpiry)  pts.push({type:'Enforcement', expiry:row.enforcExpiry});
+  pts.forEach(pt=>{
+    const urg=gate1Urgency(pt.expiry);
+    const g1l=gate1(pt.expiry).label;
+    APP.prescriptData.push({ caseRef:row.caseRef, debtorName:row.debtorName,
+      portfolio:row.portfolio, osb:row.osb, assignedTo:row.assignedTo,
+      prescriptionType:pt.type, expiryDate:pt.expiry, urgency:urg, gate1:g1l,
+      actionRequired:urg==='FAST TRACK'||urg==='EXPIRED'?'ดำเนินการด่วน':'ติดตามปกติ',
+      actionOwner:row.lawyer||row.assignedTo,
+      actionDeadline:urg==='FAST TRACK'?addDays(t,3):'',
+      status:'Pending', remarks:'Auto-seeded' });
+  });
+  if(pts.length){renderPrescriptTable();notes.push('🚨 Prescription Watch');}
+  if(notes.length) setTimeout(()=>toast(`สร้างอัตโนมัติ: ${notes.join(', ')}`,'info'),600);
+  updateCounts();
+}
+
+function editCase(i) {
+  APP.editIdx.case=i;
+  const r=APP.caseData[i];
+  Object.keys(r).forEach(k=>setField('c_'+k,r[k]));
+  document.getElementById('caseFormTitle').textContent='แก้ไขข้อมูลคดี';
+  document.getElementById('caseFormWrap').style.display='block';
+  onPrescriptionTypeChange(); updateGateSummary();
+  document.getElementById('caseFormWrap').scrollIntoView({behavior:'smooth'});
+}
+async function deleteCase(i) {
+  const ok=await showConfirm(`ลบคดี "${APP.caseData[i]?.caseRef}"?`);
+  if(!ok) return;
+  APP.caseData.splice(i,1);
+  if(APP.editIdx.case===i){APP.editIdx.case=-1;hideCaseForm();}
+  renderCaseTable(); updateCounts(); toast('ลบสำเร็จ','info');
+}
+
+function renderCaseTable() {
+  const el=document.getElementById('caseTable');
+  document.getElementById('caseCount').textContent=APP.caseData.length;
+  const filtered=applySearchFilter(APP.caseData,'case');
+  const {slice,total}=paginate(filtered,APP.page.case,APP.pageSize);
+  const filterDefs=[
+    {key:'legalStatus',label:'Legal Status',values:['Non-legal','Approved to Sue','Filed & Hearing','Judgment','Enforcement','Closed']},
+    {key:'assignedTo', label:'Assigned',    values:['Internal (IH)','OA']},
+    {key:'tier',       label:'Tier',        values:['Tier 1','Tier 2','Tier 3','Tier 4']},
+  ];
+  if(!filtered.length){
+    el.innerHTML=buildSearchBar('case','🔍 ค้นหาคดี... (Ctrl+F)',filterDefs)+
+      `<div class="empty-state"><div class="icon">📁</div><p>${APP.search.case?'ไม่พบข้อมูลที่ค้นหา':'ยังไม่มีข้อมูล'}</p></div>`;
+    return;
+  }
+  const rows=slice.map(r=>{
+    const i=APP.caseData.indexOf(r);
+    const g=evaluateAllGates(r);
+    const fu=gate1Urgency(r.filingExpiry)||r.filingUrgency;
+    const urgColor=fu==='EXPIRED'||fu==='FAST TRACK'?'badge-red':fu==='6-12 Months'?'badge-gold':fu==='Normal'?'badge-green':'badge-gray';
+    const recColor={'PROCEED':'badge-green','DO NOT FILE':'badge-red','DO NOT LITIGATE':'badge-red','HOLD':'badge-gold','REJECT':'badge-red'}[g.recommend]||'badge-gray';
+    const dfe=r.filingExpiry?daysFromNow(r.filingExpiry):null;
+    return `<tr>
+      <td class="td-mono" style="white-space:nowrap">${r.caseRef}</td>
+      <td title="${r.debtorName}" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.debtorName}</td>
+      <td><span class="badge badge-gray" style="font-size:10px">${r.portfolio||'—'}</span></td>
+      <td style="font-family:var(--mono);text-align:right;font-size:12px">${fmtThb(r.osb)}</td>
+      <td><span class="badge badge-gray" style="font-size:10px">${r.tier||'—'}</span></td>
+      <td style="font-size:12px">${r.legalStatus||'—'}</td>
+      <td>${fu?`<span class="badge ${urgColor}" style="font-size:10px">${fu}</span>`:'—'}${dfe!==null?`<span style="font-family:var(--mono);font-size:10px;color:${dfe<0?'var(--danger)':dfe<180?'var(--gold)':'var(--text-muted)'};margin-left:4px">${dfe}d</span>`:''}</td>
+      <td><span class="badge ${recColor}" style="font-size:10px">${g.recommend}</span></td>
+      <td style="font-size:11px">${r.assignedTo||'—'}</td>
+      <td class="td-actions">
+        <button class="btn btn-secondary btn-sm" onclick="editCase(${i})" title="แก้ไข">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCase(${i})" title="ลบ">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+  el.innerHTML=buildSearchBar('case','🔍 ค้นหาคดี... (Ctrl+F)',filterDefs)+
+    `<div class="table-wrap"><table>
+      <thead><tr><th>Case Ref</th><th>ชื่อลูกหนี้</th><th>Portfolio</th>
+      <th style="text-align:right">OSB (THB)</th><th>Tier</th><th>Legal Status</th>
+      <th>Urgency / Days</th><th>Gate Rec.</th><th>Assigned</th><th>จัดการ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div><div id="casePagination"></div>`;
+  renderPagination('casePagination',total,APP.page.case,APP.pageSize,'setCasePage');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SLA TRACKER
+// ═══════════════════════════════════════════════════════════════
+const SLA_FIELDS=['s_caseRef','s_debtorName','s_assignedTo','s_slaNo','s_category','s_milestone','s_triggerDate','s_deadline','s_status','s_completionDate','s_lawyer','s_escalation','s_remarks'];
+
+function onSlaCaseRefChange() {
+  const c=getCaseByRef(v('s_caseRef')); if(!c) return;
+  setField('s_debtorName',c.debtorName); setField('s_assignedTo',c.assignedTo); setField('s_lawyer',c.lawyer);
+  const cat=c.legalStatus==='Enforcement'?'Execution':'Sue';
+  setField('s_category',cat);
+  const existing=APP.slaData.filter(s=>String(s.caseRef)===String(c.caseRef));
+  const maxNo=existing.reduce((m,s)=>Math.max(m,parseInt(s.slaNo)||0),0);
+  setField('s_slaNo',String(maxNo+1));
+  if(!v('s_triggerDate')) setField('s_triggerDate',todayStr());
+  onSlaCategoryOrNoChange();
+}
+function onSlaCategoryOrNoChange() {
+  const cat=v('s_category'); const no=v('s_slaNo');
+  const ms=document.getElementById('s_milestone_sel'); if(!ms) return;
+  const mils=APP.slaMilestones[cat]||{};
+  ms.innerHTML='<option value="">-- เลือก --</option>';
+  Object.entries(mils).forEach(([k,m])=>{ const o=document.createElement('option');o.value=m.label;o.textContent=`SLA ${k}: ${m.label} (${m.days}d)`;ms.appendChild(o); });
+  const co=document.createElement('option');co.value='__custom__';co.textContent='＋ กำหนดเอง...';ms.appendChild(co);
+  if(no&&mils[no]){ms.value=mils[no].label;setField('s_milestone',mils[no].label);const tr=v('s_triggerDate');if(tr){const dl=addDays(tr,mils[no].days);setField('s_deadline',dl);setField('s_status',calcSlaStatus(dl)||'');}}
+}
+function onSlaNoChange(){const cat=v('s_category');const no=v('s_slaNo');const m=(APP.slaMilestones[cat]||{})[no];if(m){const ms=document.getElementById('s_milestone_sel');if(ms)ms.value=m.label;setField('s_milestone',m.label);const tr=v('s_triggerDate');if(tr){const dl=addDays(tr,m.days);setField('s_deadline',dl);setField('s_status',calcSlaStatus(dl)||'');}}}
+function onSlaMilestoneSelect(){const ms=document.getElementById('s_milestone_sel');const cw=document.getElementById('s_milestone_custom_wrap');const val=ms?ms.value:'';if(val==='__custom__'){if(cw)cw.style.display='';setField('s_milestone','');}else{if(cw)cw.style.display='none';setField('s_milestone',val);const cat=v('s_category');const m=Object.values(APP.slaMilestones[cat]||{}).find(x=>x.label===val);if(m&&v('s_triggerDate')){const dl=addDays(v('s_triggerDate'),m.days);setField('s_deadline',dl);setField('s_status',calcSlaStatus(dl)||'');}}}
+function onSlaTriggerChange(){const cat=v('s_category');const no=v('s_slaNo');const m=(APP.slaMilestones[cat]||{})[no];if(m&&v('s_triggerDate')){const dl=addDays(v('s_triggerDate'),m.days);setField('s_deadline',dl);setField('s_status',calcSlaStatus(dl)||'');}}
+
+function openMilestoneManager(){renderMilestoneManager();document.getElementById('milestoneManagerModal').style.display='flex';}
+function closeMilestoneManager(){document.getElementById('milestoneManagerModal').style.display='none';}
+function renderMilestoneManager(){const body=document.getElementById('milestoneManagerBody');if(!body)return;body.innerHTML=Object.entries(APP.slaMilestones).map(([cat,entries])=>`<div style="margin-bottom:20px"><div class="section-divider">${cat}</div><div style="display:flex;flex-direction:column;gap:6px">${Object.entries(entries).map(([no,m])=>`<div style="display:flex;align-items:center;gap:8px"><span class="badge badge-gray" style="width:36px;justify-content:center;flex-shrink:0">${no}</span><input value="${m.label}" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:5px 8px;font-size:12px" onchange="APP.slaMilestones['${cat}'][${no}].label=this.value"><input type="number" value="${m.days}" style="width:56px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:5px 8px;font-size:12px;text-align:center" onchange="APP.slaMilestones['${cat}'][${no}].days=Number(this.value)"><span style="font-size:11px;color:var(--text-dim);width:24px">วัน</span><button class="btn btn-danger btn-sm" onclick="deleteMilestone('${cat}',${no})">✕</button></div>`).join('')}</div><button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="addMilestone('${cat}')">＋ เพิ่ม</button></div>`).join('');}
+function addMilestone(cat){const max=Math.max(...Object.keys(APP.slaMilestones[cat]).map(Number),0);APP.slaMilestones[cat][max+1]={label:'New Milestone',days:7};renderMilestoneManager();}
+function deleteMilestone(cat,no){delete APP.slaMilestones[cat][no];renderMilestoneManager();}
+
+function showSlaForm(pre){APP.editIdx.sla=-1;SLA_FIELDS.forEach(id=>setField(id,''));setField('s_slaNo','1');const ms=document.getElementById('s_milestone_sel');if(ms)ms.innerHTML='<option value="">--</option>';document.getElementById('slaFormWrap').style.display='block';if(pre){setField('s_caseRef',pre);onSlaCaseRefChange();}else{setField('s_slaNo','1');onSlaCategoryOrNoChange();}document.getElementById('slaFormWrap').scrollIntoView({behavior:'smooth'});}
+function hideSlaForm(){document.getElementById('slaFormWrap').style.display='none';}
+function readSlaForm(){const cw=document.getElementById('s_milestone_custom_wrap');const ci=document.getElementById('s_milestone_custom');const milestone=(cw&&cw.style.display!=='none'&&ci)?ci.value.trim():v('s_milestone');const dl=v('s_deadline');return{caseRef:v('s_caseRef'),debtorName:v('s_debtorName'),assignedTo:v('s_assignedTo'),slaNo:v('s_slaNo'),category:v('s_category'),milestone,triggerDate:v('s_triggerDate'),deadline:dl,status:v('s_completionDate')?'Completed':calcSlaStatus(dl)||v('s_status'),completionDate:v('s_completionDate'),lawyer:v('s_lawyer'),escalation:v('s_escalation'),remarks:v('s_remarks')};}
+function saveSla(){const r=readSlaForm();if(!r.caseRef){toast('กรอก Case Ref','error');return;}if(!r.milestone){toast('เลือก Milestone','error');return;}if(APP.editIdx.sla>=0){APP.slaData[APP.editIdx.sla]=r;APP.editIdx.sla=-1;toast('แก้ไข SLA สำเร็จ','success');}else{APP.slaData.push(r);toast('บันทึก SLA สำเร็จ','success');}SLA_FIELDS.forEach(id=>setField(id,''));hideSlaForm();renderSlaTable();updateCounts();}
+function editSla(i){APP.editIdx.sla=i;const r=APP.slaData[i];SLA_FIELDS.forEach(id=>setField(id,r[id.replace('s_','')]??''));onSlaCategoryOrNoChange();const ms=document.getElementById('s_milestone_sel');if(ms&&r.milestone)ms.value=r.milestone;document.getElementById('slaFormWrap').style.display='block';document.getElementById('slaFormWrap').scrollIntoView({behavior:'smooth'});}
+async function deleteSla(i){if(!await showConfirm('ลบ SLA นี้?'))return;APP.slaData.splice(i,1);if(APP.editIdx.sla===i){APP.editIdx.sla=-1;hideSlaForm();}renderSlaTable();updateCounts();toast('ลบสำเร็จ','info');}
+
+function renderSlaTable(){
+  const el=document.getElementById('slaTable');
+  document.getElementById('slaCount').textContent=APP.slaData.length;
+  const filtered=applySearchFilter(APP.slaData,'sla');
+  const {slice,total}=paginate(filtered,APP.page.sla,APP.pageSize);
+  const filterDefs=[{key:'category',label:'Category',values:['Sue','Subrogation','Execution']},{key:'status',label:'Status',values:['On Track','At Risk','Breached','Completed']}];
+  if(!filtered.length){el.innerHTML=buildSearchBar('sla','🔍 ค้นหา SLA...',filterDefs)+`<div class="empty-state"><div class="icon">⏰</div><p>ยังไม่มีข้อมูล</p></div>`;return;}
+  const rows=slice.map(r=>{
+    const i=APP.slaData.indexOf(r);
+    const d=daysFromNow(r.deadline);
+    const st=r.completionDate?'Completed':calcSlaStatus(r.deadline)||r.status;
+    const sc=st==='On Track'?'badge-green':st==='Breached'?'badge-red':st==='Completed'?'badge-blue':'badge-gold';
+    return `<tr><td class="td-mono">${r.caseRef}</td><td>${r.debtorName||'—'}</td><td style="font-family:var(--mono)">${r.slaNo||'—'}</td><td>${r.category||'—'}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.milestone||'—'}</td><td style="font-family:var(--mono);font-size:11px">${r.deadline||'—'}</td><td><span style="font-family:var(--mono);font-size:11px;color:${d!==null?(d<0?'var(--danger)':d<=7?'var(--gold)':'var(--text-dim)'):'var(--text-dim)'}">${d!==null?d+'d':'—'}</span></td><td>${st?`<span class="badge ${sc}">${st}</span>`:'—'}</td><td class="td-actions"><button class="btn btn-secondary btn-sm" onclick="editSla(${i})">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteSla(${i})">🗑</button></td></tr>`;
+  }).join('');
+  el.innerHTML=buildSearchBar('sla','🔍 ค้นหา SLA...',filterDefs)+`<div class="table-wrap"><table><thead><tr><th>Case Ref</th><th>Debtor</th><th>SLA#</th><th>Category</th><th>Milestone</th><th>Deadline</th><th>Days</th><th>Status</th><th>จัดการ</th></tr></thead><tbody>${rows}</tbody></table></div><div id="slaPagination"></div>`;
+  renderPagination('slaPagination',total,APP.page.sla,APP.pageSize,'setSlaPage');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRESCRIPTION WATCH
+// ═══════════════════════════════════════════════════════════════
+const PRESC_FIELDS=['p_caseRef','p_debtorName','p_portfolio','p_osb','p_assignedTo','p_prescriptionType','p_expiryDate','p_urgency','p_gate1','p_actionRequired','p_actionOwner','p_actionDeadline','p_status','p_remarks'];
+function onPrescCaseRefChange(){const c=getCaseByRef(v('p_caseRef'));if(!c)return;setField('p_debtorName',c.debtorName);setField('p_portfolio',c.portfolio);setField('p_osb',c.osb);setField('p_assignedTo',c.assignedTo);setField('p_actionOwner',c.lawyer||c.assignedTo);const type=v('p_prescriptionType')||c.prescriptionType;if(type){setField('p_prescriptionType',type);const exp=type==='Enforcement'?c.enforcExpiry:c.filingExpiry;if(exp){setField('p_expiryDate',exp);onPrescExpiryChange();}}}
+function onPrescTypeChange(){const c=getCaseByRef(v('p_caseRef'));if(!c)return;const exp=v('p_prescriptionType')==='Enforcement'?c.enforcExpiry:c.filingExpiry;if(exp){setField('p_expiryDate',exp);onPrescExpiryChange();}}
+function onPrescExpiryChange(){const exp=v('p_expiryDate');const urg=gate1Urgency(exp);const g1=gate1(exp);setField('p_urgency',urg);setField('p_gate1',g1.label);if(urg==='FAST TRACK'||urg==='EXPIRED'){setField('p_actionRequired','ดำเนินการด่วน — ตรวจสอบและเตรียมยื่นฟ้อง');if(!v('p_actionDeadline'))setField('p_actionDeadline',addDays(todayStr(),3));}else if(!v('p_actionRequired'))setField('p_actionRequired','ติดตามตามปกติ');const badge=document.getElementById('p_urgency_badge');if(badge){badge.textContent=urg||'—';badge.className=`badge ${urg==='EXPIRED'||urg==='FAST TRACK'?'badge-red':urg==='6-12 Months'?'badge-gold':urg==='Normal'?'badge-green':'badge-gray'}`;}}
+function showPrescForm(pre){APP.editIdx.prescript=-1;PRESC_FIELDS.forEach(id=>setField(id,''));document.getElementById('prescriptFormWrap').style.display='block';if(pre){setField('p_caseRef',pre);onPrescCaseRefChange();}document.getElementById('prescriptFormWrap').scrollIntoView({behavior:'smooth'});}
+function hidePrescForm(){document.getElementById('prescriptFormWrap').style.display='none';}
+function readPrescForm(){const urg=gate1Urgency(v('p_expiryDate'))||v('p_urgency');return{caseRef:v('p_caseRef'),debtorName:v('p_debtorName'),portfolio:v('p_portfolio'),osb:nv('p_osb'),assignedTo:v('p_assignedTo'),prescriptionType:v('p_prescriptionType'),expiryDate:v('p_expiryDate'),urgency:urg,gate1:gate1(v('p_expiryDate')).label||v('p_gate1'),actionRequired:v('p_actionRequired'),actionOwner:v('p_actionOwner'),actionDeadline:v('p_actionDeadline'),status:v('p_status'),remarks:v('p_remarks')};}
+function savePresc(){const r=readPrescForm();if(!r.caseRef){toast('กรอก Case Ref','error');return;}if(APP.editIdx.prescript>=0){APP.prescriptData[APP.editIdx.prescript]=r;APP.editIdx.prescript=-1;toast('แก้ไขสำเร็จ','success');}else{APP.prescriptData.push(r);toast('บันทึกสำเร็จ','success');}PRESC_FIELDS.forEach(id=>setField(id,''));hidePrescForm();renderPrescriptTable();updateCounts();}
+function editPresc(i){APP.editIdx.prescript=i;const r=APP.prescriptData[i];PRESC_FIELDS.forEach(id=>setField(id,r[id.replace('p_','')]??''));onPrescExpiryChange();document.getElementById('prescriptFormWrap').style.display='block';document.getElementById('prescriptFormWrap').scrollIntoView({behavior:'smooth'});}
+async function deletePresc(i){if(!await showConfirm('ลบรายการ Prescription นี้?'))return;APP.prescriptData.splice(i,1);if(APP.editIdx.prescript===i){APP.editIdx.prescript=-1;hidePrescForm();}renderPrescriptTable();updateCounts();toast('ลบสำเร็จ','info');}
+function renderPrescriptTable(){
+  const el=document.getElementById('prescriptTable');
+  document.getElementById('prescriptCount').textContent=APP.prescriptData.length;
+  const filtered=applySearchFilter(APP.prescriptData,'prescript');
+  const {slice,total}=paginate(filtered,APP.page.prescript,APP.pageSize);
+  const filterDefs=[{key:'prescriptionType',label:'Type',values:['Filing','Enforcement']},{key:'status',label:'Status',values:['Pending','In Progress','Done']}];
+  if(!filtered.length){el.innerHTML=buildSearchBar('prescript','🔍 ค้นหา...',filterDefs)+`<div class="empty-state"><div class="icon">🚨</div><p>ยังไม่มีข้อมูล</p></div>`;return;}
+  const rows=slice.map(r=>{
+    const i=APP.prescriptData.indexOf(r);
+    const liveUrg=gate1Urgency(r.expiryDate)||r.urgency;
+    const d=r.expiryDate?daysFromNow(r.expiryDate):null;
+    const uc=liveUrg==='EXPIRED'||liveUrg==='FAST TRACK'?'badge-red':liveUrg==='6-12 Months'?'badge-gold':'badge-green';
+    const g1=gate1(r.expiryDate);
+    return `<tr${d!==null&&d<0?' style="opacity:0.7"':''}><td class="td-mono">${r.caseRef}</td><td>${r.debtorName||'—'}</td><td>${r.prescriptionType||'—'}</td><td style="font-family:var(--mono);font-size:11px">${r.expiryDate||'—'}</td><td><span style="font-family:var(--mono);font-size:11px;font-weight:600;color:${d!==null?(d<0?'var(--danger)':d<180?'var(--gold)':'var(--text-dim)'):'var(--text-dim)'}">${d!==null?d+'d':'—'}</span></td><td>${liveUrg?`<span class="badge ${uc}">${liveUrg}</span>`:'—'}</td><td style="font-size:11px">${g1.label||r.gate1||'—'}</td><td>${r.status||'—'}</td><td class="td-actions"><button class="btn btn-secondary btn-sm" onclick="editPresc(${i})">✏️</button><button class="btn btn-danger btn-sm" onclick="deletePresc(${i})">🗑</button></td></tr>`;
+  }).join('');
+  el.innerHTML=buildSearchBar('prescript','🔍 ค้นหา...',filterDefs)+`<div class="table-wrap"><table><thead><tr><th>Case Ref</th><th>Debtor</th><th>Type</th><th>Expiry</th><th>Days Left</th><th>Urgency</th><th>Gate 1</th><th>Status</th><th>จัดการ</th></tr></thead><tbody>${rows}</tbody></table></div><div id="prescriptPagination"></div>`;
+  renderPagination('prescriptPagination',total,APP.page.prescript,APP.pageSize,'setPrescriptPage');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REIMBURSEMENT
+// ═══════════════════════════════════════════════════════════════
+const REIMB_FIELDS=['r_reqNo','r_lawyer','r_caseRef','r_debtorName','r_expenseType','r_amount','r_payStatus','r_payDate','r_advance','r_advanceDate','r_receipt','r_reimbRef','r_approvedBy','r_remarks'];
+function onReimbCaseRefChange(){const c=getCaseByRef(v('r_caseRef'));if(!c)return;setField('r_debtorName',c.debtorName);setField('r_lawyer',c.lawyer);onReimbWorkType(c.legalStatus==='Enforcement'?'Enforcement':'Filing');if(!v('r_reqNo'))setField('r_reqNo',nextReqNo());}
+function onReimbWorkType(wt){const sel=document.getElementById('r_expenseType');if(!sel)return;const presets=APP.expensePresets[wt]||APP.expensePresets.General;sel.innerHTML='<option value="">-- เลือก --</option>';presets.forEach(p=>{const o=document.createElement('option');o.value=p.label;o.textContent=p.label+(p.amount?` (~฿${p.amount.toLocaleString()})`:' (กรอกเอง)');sel.appendChild(o);});const co=document.createElement('option');co.value='__custom__';co.textContent='＋ กรอกเอง';sel.appendChild(co);const cw=document.getElementById('r_expenseCustomWrap');if(cw)cw.style.display='none';setField('r_amount','');}
+function onReimbExpenseSelect(){const sel=document.getElementById('r_expenseType');const val=sel?sel.value:'';const cw=document.getElementById('r_expenseCustomWrap');if(val==='__custom__'){if(cw)cw.style.display='';return;}if(cw)cw.style.display='none';const presets=Object.values(APP.expensePresets).flat();const p=presets.find(x=>x.label===val);if(p&&p.amount)setField('r_amount',p.amount);}
+function showReimbForm(pre){APP.editIdx.reimburse=-1;REIMB_FIELDS.forEach(id=>setField(id,''));document.getElementById('reimburseFormWrap').style.display='block';setField('r_reqNo',nextReqNo());if(pre){setField('r_caseRef',pre);onReimbCaseRefChange();}else onReimbWorkType('Filing');document.getElementById('reimburseFormWrap').scrollIntoView({behavior:'smooth'});}
+function hideReimbForm(){document.getElementById('reimburseFormWrap').style.display='none';}
+function readReimbForm(){const cw=document.getElementById('r_expenseCustomWrap');const ci=document.getElementById('r_expenseCustom');const expenseType=(cw&&cw.style.display!=='none'&&ci)?ci.value.trim():v('r_expenseType');return{reqNo:v('r_reqNo'),lawyer:v('r_lawyer'),caseRef:v('r_caseRef'),debtorName:v('r_debtorName'),expenseType,amount:nv('r_amount'),payStatus:v('r_payStatus'),payDate:v('r_payDate'),advance:nv('r_advance'),advanceDate:v('r_advanceDate'),receipt:v('r_receipt'),reimbRef:v('r_reimbRef'),approvedBy:v('r_approvedBy'),remarks:v('r_remarks')};}
+function saveReimb(){const r=readReimbForm();if(!r.reqNo){toast('กรอก Request No.','error');return;}if(!r.expenseType){toast('เลือกประเภทค่าใช้จ่าย','error');return;}if(APP.editIdx.reimburse>=0){APP.reimburseData[APP.editIdx.reimburse]=r;APP.editIdx.reimburse=-1;toast('แก้ไขสำเร็จ','success');}else{APP.reimburseData.push(r);toast('บันทึกสำเร็จ','success');}REIMB_FIELDS.forEach(id=>setField(id,''));hideReimbForm();renderReimburseTable();updateCounts();}
+function editReimb(i){APP.editIdx.reimburse=i;const r=APP.reimburseData[i];REIMB_FIELDS.forEach(id=>setField(id,r[id.replace('r_','')]??''));onReimbWorkType('General');const sel=document.getElementById('r_expenseType');if(sel)sel.value=r.expenseType;document.getElementById('reimburseFormWrap').style.display='block';document.getElementById('reimburseFormWrap').scrollIntoView({behavior:'smooth'});}
+async function deleteReimb(i){if(!await showConfirm('ลบรายการเบิกนี้?'))return;APP.reimburseData.splice(i,1);if(APP.editIdx.reimburse===i){APP.editIdx.reimburse=-1;hideReimbForm();}renderReimburseTable();updateCounts();toast('ลบสำเร็จ','info');}
+function renderReimburseTable(){
+  const el=document.getElementById('reimburseTable');
+  document.getElementById('reimburseCount').textContent=APP.reimburseData.length;
+  const filtered=applySearchFilter(APP.reimburseData,'reimburse');
+  const {slice,total}=paginate(filtered,APP.page.reimburse,APP.pageSize);
+  const totalAmt=filtered.reduce((s,r)=>s+(Number(r.amount)||0),0);
+  const filterDefs=[{key:'payStatus',label:'Pay Status',values:['Pending','Paid','Overdue','Cancelled']},{key:'receipt',label:'Receipt',values:['Yes','No']}];
+  if(!filtered.length){el.innerHTML=buildSearchBar('reimburse','🔍 ค้นหา...',filterDefs)+`<div class="empty-state"><div class="icon">💰</div><p>ยังไม่มีข้อมูล</p></div>`;return;}
+  const rows=slice.map(r=>{const i=APP.reimburseData.indexOf(r);return `<tr><td class="td-mono">${r.reqNo}</td><td class="td-mono" style="font-size:11px">${r.caseRef||'—'}</td><td>${r.debtorName||'—'}</td><td>${r.expenseType||'—'}</td><td style="font-family:var(--mono);text-align:right">${fmtThb(r.amount)}</td><td>${r.payStatus?`<span class="badge ${r.payStatus==='Paid'?'badge-green':r.payStatus==='Overdue'?'badge-red':'badge-gold'}">${r.payStatus}</span>`:'—'}</td><td>${r.receipt?`<span class="badge ${r.receipt==='Yes'?'badge-green':'badge-gray'}">${r.receipt}</span>`:'—'}</td><td class="td-actions"><button class="btn btn-secondary btn-sm" onclick="editReimb(${i})">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteReimb(${i})">🗑</button></td></tr>`;}).join('');
+  el.innerHTML=buildSearchBar('reimburse','🔍 ค้นหา...',filterDefs)+`<div class="table-wrap"><table><thead><tr><th>REQ No.</th><th>Case Ref</th><th>Debtor</th><th>Expense Type</th><th style="text-align:right">Amount (THB)</th><th>Pay Status</th><th>Receipt</th><th>จัดการ</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="4" style="text-align:right;font-size:11px;font-weight:600;color:var(--text-dim);padding:8px 12px">รวม ${filtered.length} รายการ</td><td style="font-family:var(--mono);font-weight:700;color:var(--gold);padding:8px 12px;text-align:right">${fmtThb(totalAmt)}</td><td colspan="3"></td></tr></tfoot></table></div><div id="reimbursePagination"></div>`;
+  renderPagination('reimbursePagination',total,APP.page.reimburse,APP.pageSize,'setReimbursePage');
+}
+
+
+// ── Dashboard / KPI Visualization ──────────────────────────────────
+// Called whenever user switches to the dashboard page.
+
+function renderDashboard() {
+  const { caseData, slaData, prescriptData, reimburseData } = APP;
+
+  // ── Top stat counters ─────────────────────────────────────────────
+  document.getElementById('statCase').textContent      = caseData.length;
+  document.getElementById('statSla').textContent       = slaData.length;
+  document.getElementById('statPrescript').textContent = prescriptData.length;
+  document.getElementById('statReimburse').textContent = reimburseData.length;
+
+  renderSlaStatusDonut();
+  renderLegalStatusBar();
+  renderUrgencyBreakdown();
+  renderReimbursePayStatus();
+  renderOsbByTier();
+}
+
+// ── Colour palette helpers ────────────────────────────────────────
+const C = {
+  accent:  '#2d7aff',
+  green:   '#22c55e',
+  danger:  '#ff3b5c',
+  gold:    '#ffc840',
+  teal:    '#00d4aa',
+  purple:  '#a855f7',
+  orange:  '#ff6b35',
+  dim:     '#7a8899',
+  border:  '#2a3040',
+  surface2:'#1e2330',
+};
+
+function hex2rgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+// ── Generic: render an SVG donut chart ───────────────────────────
+// segments: [{label, value, color}]
+function svgDonut(segments, cx=80, cy=80, r=60, thickness=22) {
+  const total = segments.reduce((s, d) => s + d.value, 0);
+  if (!total) return `<text x="${cx}" y="${cy+5}" text-anchor="middle" class="chart-bar-label">ไม่มีข้อมูล</text>`;
+
+  let svgPaths = '';
+  let angle = -Math.PI / 2;
+
+  for (const seg of segments) {
+    const frac = seg.value / total;
+    const sweep = frac * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(angle);
+    const y1 = cy + r * Math.sin(angle);
+    angle += sweep;
+    const x2 = cx + r * Math.cos(angle);
+    const y2 = cy + r * Math.sin(angle);
+    const large = sweep > Math.PI ? 1 : 0;
+
+    const or = r;
+    const ir = r - thickness;
+    const ox1 = cx + or * Math.cos(angle - sweep);
+    const oy1 = cy + or * Math.sin(angle - sweep);
+    const ox2 = cx + or * Math.cos(angle);
+    const oy2 = cy + or * Math.sin(angle);
+    const ix1 = cx + ir * Math.cos(angle);
+    const iy1 = cy + ir * Math.sin(angle);
+    const ix2 = cx + ir * Math.cos(angle - sweep);
+    const iy2 = cy + ir * Math.sin(angle - sweep);
+
+    svgPaths += `<path d="M${ox1},${oy1} A${or},${or} 0 ${large},1 ${ox2},${oy2}
+      L${ix1},${iy1} A${ir},${ir} 0 ${large},0 ${ix2},${iy2} Z"
+      fill="${seg.color}" opacity="0.9"/>`;
+  }
+
+  return svgPaths;
+}
+
+// ── Chart 1: SLA Status donut ─────────────────────────────────────
+function renderSlaStatusDonut() {
+  const el = document.getElementById('chartSlaStatus');
+  if (!el) return;
+  const data = APP.slaData;
+  const counts = { 'On Track':0, 'Breached':0, 'At Risk':0, 'Completed':0, 'อื่นๆ':0 };
+  data.forEach(r => {
+    if (counts[r.status] !== undefined) counts[r.status]++;
+    else counts['อื่นๆ']++;
+  });
+
+  const palette = { 'On Track': C.green, 'Breached': C.danger, 'At Risk': C.gold, 'Completed': C.accent, 'อื่นๆ': C.dim };
+  const segments = Object.entries(counts)
+    .filter(([,v]) => v > 0)
+    .map(([label, value]) => ({ label, value, color: palette[label] }));
+
+  const total = data.length;
+  const cx = 80, cy = 80;
+
+  const legendHtml = segments.map(s => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${s.color}"></div>
+      <span>${s.label}</span>
+      <span style="margin-left:auto;font-family:var(--mono);color:var(--text)">${s.value}</span>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div class="donut-wrap">
+      <svg width="160" height="160" style="flex-shrink:0">
+        ${svgDonut(segments, cx, cy, 62, 22)}
+        <text x="${cx}" y="${cy - 6}" text-anchor="middle" style="font-size:22px;font-weight:700;fill:var(--text);font-family:'IBM Plex Mono',monospace">${total}</text>
+        <text x="${cx}" y="${cy + 14}" text-anchor="middle" style="font-size:10px;fill:var(--text-dim);font-family:'IBM Plex Sans Thai',sans-serif">รายการ</text>
+      </svg>
+      <div class="donut-legend" style="flex:1">${legendHtml || '<div class="legend-item">ไม่มีข้อมูล</div>'}</div>
+    </div>`;
+}
+
+// ── Chart 2: Legal Status horizontal bar chart ────────────────────
+function renderLegalStatusBar() {
+  const el = document.getElementById('chartLegalStatus');
+  if (!el) return;
+
+  const statusList = ['Non-legal','Approved to Sue','Filed & Hearing','Judgment','Enforcement'];
+  const colorList  = [C.dim, C.gold, C.accent, C.teal, C.green];
+  const counts = {};
+  statusList.forEach(s => counts[s] = 0);
+  APP.caseData.forEach(r => {
+    if (counts[r.legalStatus] !== undefined) counts[r.legalStatus]++;
+  });
+
+  const max = Math.max(...Object.values(counts), 1);
+  const W = 260, barH = 14, gap = 28, padL = 110, padT = 16;
+  const svgH = padT + statusList.length * gap + 10;
+
+  const bars = statusList.map((s, i) => {
+    const val = counts[s];
+    const bw  = Math.max((val / max) * W, val > 0 ? 4 : 0);
+    const y   = padT + i * gap;
+    return `
+      <text x="${padL - 8}" y="${y + barH/2 + 4}" text-anchor="end" class="chart-bar-label">${s}</text>
+      <rect x="${padL}" y="${y}" width="${bw}" height="${barH}" rx="3" fill="${colorList[i]}" opacity="0.85"/>
+      ${val > 0 ? `<text x="${padL + bw + 5}" y="${y + barH/2 + 4}" class="chart-value">${val}</text>` : ''}`;
+  }).join('');
+
+  el.innerHTML = `<svg width="100%" viewBox="0 0 ${padL + W + 40} ${svgH}" preserveAspectRatio="xMidYMid meet">
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${svgH - 6}" class="chart-axis"/>
+    ${bars}
+  </svg>`;
+}
+
+// ── Chart 3: Urgency breakdown (Prescription Watch) ───────────────
+function renderUrgencyBreakdown() {
+  const el = document.getElementById('chartUrgency');
+  if (!el) return;
+
+  const bands = ['EXPIRED','FAST TRACK','6-12 Months','Normal'];
+  const colors = [C.danger, C.orange, C.gold, C.green];
+  const counts = {}; bands.forEach(b => counts[b] = 0);
+  APP.prescriptData.forEach(r => {
+    if (counts[r.urgency] !== undefined) counts[r.urgency]++;
+    else counts['Normal']++;
+  });
+  const total = APP.prescriptData.length || 1;
+
+  el.innerHTML = bands.map((b, i) => {
+    const val  = counts[b];
+    const pct  = Math.round((val / total) * 100);
+    return `
+      <div class="urgency-row">
+        <div style="width:90px;font-size:11px;color:${colors[i]};font-weight:600">${b}</div>
+        <div class="urgency-bar-wrap">
+          <div class="urgency-bar" style="width:${pct}%;background:${colors[i]}"></div>
+        </div>
+        <div style="width:28px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--text)">${val}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── Chart 4: Reimbursement payment status donut ───────────────────
+function renderReimbursePayStatus() {
+  const el = document.getElementById('chartPayStatus');
+  if (!el) return;
+
+  const statuses = { 'Paid': C.green, 'Pending': C.gold, 'Overdue': C.danger, 'Cancelled': C.dim };
+  const counts = {}; Object.keys(statuses).forEach(s => counts[s] = 0);
+  APP.reimburseData.forEach(r => {
+    if (counts[r.payStatus] !== undefined) counts[r.payStatus]++;
+  });
+
+  const totalAmt = APP.reimburseData.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const segments = Object.entries(counts)
+    .filter(([,v]) => v > 0)
+    .map(([label, value]) => ({ label, value, color: statuses[label] }));
+
+  const legendHtml = Object.entries(counts).map(([label, val]) => val > 0 ? `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${statuses[label]}"></div>
+      <span>${label}</span>
+      <span style="margin-left:auto;font-family:var(--mono);color:var(--text)">${val}</span>
+    </div>` : '').join('');
+
+  el.innerHTML = `
+    <div class="donut-wrap">
+      <svg width="160" height="160" style="flex-shrink:0">
+        ${svgDonut(segments, 80, 80, 62, 22)}
+        <text x="80" y="74" text-anchor="middle" style="font-size:9px;fill:var(--text-dim);font-family:'IBM Plex Sans Thai',sans-serif">ยอดรวม</text>
+        <text x="80" y="90" text-anchor="middle" style="font-size:11px;font-weight:700;fill:var(--text);font-family:'IBM Plex Mono',monospace">${(totalAmt/1000).toFixed(0)}K</text>
+      </svg>
+      <div class="donut-legend" style="flex:1">${legendHtml || '<div class="legend-item">ไม่มีข้อมูล</div>'}</div>
+    </div>`;
+}
+
+// ── Chart 5: OSB by Tier vertical bar chart ───────────────────────
+function renderOsbByTier() {
+  const el = document.getElementById('chartOsbTier');
+  if (!el) return;
+
+  const tiers  = ['Tier 1','Tier 2','Tier 3','Tier 4'];
+  const colors = [C.teal, C.accent, C.gold, C.danger];
+  const sums   = {}; tiers.forEach(t => sums[t] = 0);
+  APP.caseData.forEach(r => {
+    if (sums[r.tier] !== undefined) sums[r.tier] += Number(r.osb) || 0;
+  });
+
+  const max = Math.max(...Object.values(sums), 1);
+  const W = 44, gap = 16, H = 100, padB = 24, padL = 10;
+  const svgW = padL + tiers.length * (W + gap);
+
+  const bars = tiers.map((t, i) => {
+    const val  = sums[t];
+    const bh   = Math.max((val / max) * H, val > 0 ? 4 : 0);
+    const x    = padL + i * (W + gap);
+    const y    = H - bh;
+    return `
+      <rect x="${x}" y="${y}" width="${W}" height="${bh}" rx="4"
+        fill="${colors[i]}" opacity="0.85"/>
+      <text x="${x + W/2}" y="${H + 16}" text-anchor="middle" class="chart-bar-label">${t}</text>
+      ${val > 0 ? `<text x="${x + W/2}" y="${y - 4}" text-anchor="middle" class="chart-value" style="font-size:10px">${(val/1000000).toFixed(1)}M</text>` : ''}`;
+  }).join('');
+
+  el.innerHTML = `<svg width="100%" viewBox="0 0 ${svgW} ${H + padB + 10}" preserveAspectRatio="xMidYMid meet">
+    <line x1="${padL - 4}" y1="0" x2="${padL - 4}" y2="${H}" class="chart-axis"/>
+    <line x1="${padL - 4}" y1="${H}" x2="${svgW}" y2="${H}" class="chart-axis"/>
+    ${bars}
+  </svg>`;
+}
+
+
+// ── forecast.js ─────────────────────────────────────────────────────
+// Placeholder module for forecasting and trend analysis features.
+// Add your implementations here and call them from kpi.js or main.js.
+
+/**
+ * Example: forecast SLA breach rate over next N weeks
+ * based on current breach % in slaData.
+ *
+ * @param {number} weeks - number of weeks to project
+ * @returns {Array<{week: number, projected: number}>}
+ */
+function forecastSlaBreachRate(weeks = 4) {
+  const { slaData } = APP;
+  if (!slaData.length) return [];
+
+  const breached = slaData.filter(r => r.status === 'Breached').length;
+  const rate     = breached / slaData.length; // current breach rate
+
+  return Array.from({ length: weeks }, (_, i) => ({
+    week:      i + 1,
+    projected: Math.round(slaData.length * rate * (1 + i * 0.05)), // simple linear growth
+  }));
+}
+
+/**
+ * Example: estimate prescriptions expiring in next N days
+ *
+ * @param {number} days
+ * @returns {Array} cases expiring within the window
+ */
+function prescriptionsDueIn(days = 30) {
+  const { prescriptData } = APP;
+  const now     = new Date();
+  const cutoff  = new Date(now.getTime() + days * 86400000);
+
+  return prescriptData.filter(r => {
+    if (!r.expiryDate) return false;
+    const exp = new Date(r.expiryDate);
+    return exp >= now && exp <= cutoff;
+  });
+}
+
+/**
+ * Example: monthly reimbursement trend from loaded data
+ *
+ * @returns {Object} month -> total amount
+ */
+function reimburseMonthlyTrend() {
+  const trend = {};
+  APP.reimburseData.forEach(r => {
+    const d = r.payDate || r.advanceDate;
+    if (!d) return;
+    const month = d.slice(0, 7); // YYYY-MM
+    trend[month] = (trend[month] || 0) + (Number(r.amount) || 0);
+  });
+  return trend;
+}
+
+</script>
+</body>
+</html>

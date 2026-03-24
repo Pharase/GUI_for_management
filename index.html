@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asset Management Litigation Monitor</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    .modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+    .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:22px;width:600px;max-width:94vw;max-height:84vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.5)}
+    .modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+    .confirm-actions{display:flex;gap:10px;margin-top:18px;justify-content:flex-end}
+    .gate-summary{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0}
+    .gate-chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;font-family:var(--mono)}
+    .urgency-display{display:flex;align-items:center;gap:10px;padding:6px 0}
+    .auto-label{color:var(--accent2);font-size:9px;font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px}
+    .lawstep-bar{background:var(--surface2);border:1px dashed var(--border-bright);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px}
+    .lawstep-bar .desc{font-size:12px;color:var(--text-dim);flex:1}
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">Asset Management <span>Litigation</span></div>
+  <div class="divider"></div>
+  <div class="file-status" id="fileStatus">
+    <div class="dot"></div>
+    <span id="fileStatusText">ลากไฟล์ Asset Management.xlsx วางที่นี่ หรือกด "โหลด Asset Management"</span>
+  </div>
+  <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);flex-shrink:0">Ctrl+S บันทึก · Ctrl+F ค้นหา · Esc ปิด</span>
+  <div class="header-actions">
+    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('caseFileInput').click()">📂 โหลด Asset Management</button>
+    <button class="btn btn-secondary btn-sm" id="btnLawstep" disabled onclick="document.getElementById('lawstepInput').click()">🔄 Import LawStep</button>
+    <button class="btn btn-success btn-sm"  id="btnExport"  disabled onclick="exportExcel()">⬇️ บันทึก / Export</button>
+  </div>
+</header>
+<input type="file" id="caseFileInput"      accept=".xlsx,.xls" onchange="loadCases(event)"    style="display:none">
+<input type="file" id="lawstepInput"  accept=".xlsx,.xls" onchange="loadLawStep(event)" style="display:none">
+
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">ภาพรวม</div>
+      <div class="nav-item" onclick="switchPage('dashboard')" data-page="dashboard"><span class="nav-icon">📊</span> Dashboard</div>
+    </div>
+    <div class="sidebar-section" style="margin-top:10px">
+      <div class="sidebar-label">ข้อมูล</div>
+      <div class="nav-item active" onclick="switchPage('case')" data-page="case"><span class="nav-icon">📁</span> Case Register<span class="nav-count" id="cntCase">0</span></div>
+      <div class="nav-item" onclick="switchPage('sla')"  data-page="sla"><span class="nav-icon">⏰</span> SLA Tracker<span class="nav-count" id="cntSla">0</span></div>
+      <div class="nav-item" onclick="switchPage('prescription')" data-page="prescription"><span class="nav-icon">🚨</span> Prescription<span class="nav-count" id="cntPrescript">0</span></div>
+      <div class="nav-item" onclick="switchPage('reimburse')" data-page="reimburse"><span class="nav-icon">💰</span> Reimbursement<span class="nav-count" id="cntReimburse">0</span></div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ════ DASHBOARD ════ -->
+    <div class="page" id="page-dashboard">
+      <div class="page-header"><div><div class="page-title">📊 Dashboard</div><div class="page-sub">KPI · Gate Status · Urgency Live</div></div></div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">Case Register</div><div class="stat-value blue" id="statCase">0</div></div>
+        <div class="stat-card"><div class="stat-label">SLA Entries</div><div class="stat-value green" id="statSla">0</div></div>
+        <div class="stat-card"><div class="stat-label">Prescription Watch</div><div class="stat-value gold" id="statPrescript">0</div></div>
+        <div class="stat-card"><div class="stat-label">Reimbursement</div><div class="stat-value red" id="statReimburse">0</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card"><div class="card-header"><div><div class="card-title">SLA Status</div><div class="card-sub">คำนวณจาก deadline live</div></div></div><div id="chartSlaStatus"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+        <div class="card"><div class="card-header"><div><div class="card-title">Legal Status</div></div></div><div id="chartLegalStatus"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+      </div>
+      <div class="chart-grid col-3">
+        <div class="card"><div class="card-header"><div><div class="card-title">Prescription Urgency</div><div class="card-sub">Live จากวันปัจจุบัน</div></div></div><div id="chartUrgency"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+        <div class="card"><div class="card-header"><div><div class="card-title">Payment Status</div></div></div><div id="chartPayStatus"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+        <div class="card"><div class="card-header"><div><div class="card-title">OSB by Tier</div></div></div><div id="chartOsbTier"><div class="empty-state" style="padding:24px"><p>โหลดไฟล์</p></div></div></div>
+      </div>
+    </div>
+
+    <!-- ════ CASE REGISTER ════ -->
+    <div class="page active" id="page-case">
+      <div class="page-header">
+        <div><div class="page-title">📁 Case Register</div><div class="page-sub">Gate 1–4 คำนวณอัตโนมัติ · บันทึกใหม่ → SLA + Prescription สร้างทันที</div></div>
+        <button class="btn btn-primary btn-sm" onclick="showCaseForm()">＋ เพิ่มคดีใหม่</button>
+      </div>
+
+      <div class="lawstep-bar">
+        <span style="font-size:18px">🔄</span>
+        <div class="desc"><strong>Import LawStep</strong> — อัปเดตสถานะคดีจาก Law_Step.xlsx โดยอัตโนมัติ (match ด้วย Contract No.)<br>ข้อมูลที่มีอยู่แล้วจะถูก merge · ข้อมูลใหม่จะถูกเพิ่ม · Gate ทุก step คำนวณใหม่ทั้งหมด</div>
+        <button class="btn btn-secondary btn-sm" id="btnLawstepBar" onclick="document.getElementById('lawstepInput').click()">📥 Import LawStep</button>
+      </div>
+
+      <!-- ── Case Form ── -->
+      <div id="caseFormWrap" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title" id="caseFormTitle">เพิ่มคดีใหม่</div><div class="card-sub">* จำเป็น · Gate คำนวณเองจาก OSB/Tier/Class/Expiry</div></div>
+            <button class="btn btn-secondary btn-sm" onclick="hideCaseForm()">✕ ปิด</button>
+          </div>
+
+          <!-- Gate Summary (live) -->
+          <div id="gateSummary"><div class="gate-summary"><span style="font-size:12px;color:var(--text-muted)">กรอกข้อมูลเพื่อดู Gate recommendation...</span></div></div>
+
+          <div class="section-divider">ข้อมูลหลัก</div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Case Ref No.<span class="req">*</span></label><input id="c_caseRef" placeholder="เลขสัญญา / Contract No." oninput="recalcCaseForm()"></div>
+            <div class="field"><label>Debtor Name<span class="req">*</span></label><input id="c_debtorName" placeholder="ชื่อลูกหนี้" autofocus></div>
+            <div class="field"><label>Portfolio Code</label><input id="c_portfolio" placeholder="22Q2-MTC"></div>
+            <div class="field">
+              <label>OSB (THB)<span class="req">*</span></label>
+              <input id="c_osb" type="number" placeholder="0" oninput="recalcCaseForm()">
+              <span class="hint">&lt;50K=T1 · &lt;300K=T2 · &lt;1M=T3 · ≥1M=T4</span>
+            </div>
+            <div class="field">
+              <label>Tier<span class="auto-label">(auto จาก OSB)</span></label>
+              <select id="c_tier" onchange="recalcCaseForm()">
+                <option value="">-- เลือก --</option>
+                <option>Tier 1</option><option>Tier 2</option><option>Tier 3</option><option>Tier 4</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Debtor Class<span class="auto-label">(แนะนำจาก Tier)</span></label>
+              <select id="c_debtorClass" onchange="recalcCaseForm()">
+                <option value="">-- เลือก --</option>
+                <option title="Confirmed asset+workplace → Immediate filing">A — Confirmed (ทรัพย์+งาน)</option>
+                <option title="Workplace only → Wage garnishment">B — Workplace only (งาน)</option>
+                <option title="Suspected asset → Investigate first">C — Suspected (สงสัยมีทรัพย์)</option>
+                <option title="Nothing → HOLD">D — None (HOLD)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="section-divider">สถานะและผู้รับผิดชอบ</div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Legal Status</label>
+              <select id="c_legalStatus">
+                <option value="">-- เลือก --</option><option>Non-legal</option><option>Approved to Sue</option>
+                <option>Filed &amp; Hearing</option><option>Judgment</option><option>Enforcement</option><option>Closed</option>
+              </select></div>
+            <div class="field">
+              <label>Assigned To<span class="auto-label">(คำนวณจาก Urgency+OSB)</span></label>
+              <select id="c_assignedTo">
+                <option value="">-- เลือก --</option><option>Internal (IH)</option><option>OA</option>
+              </select></div>
+            <div class="field"><label>Assignment Date</label><input id="c_assignDate" type="date"></div>
+            <div class="field form-full"><label>Internal Lawyer / OA Name</label><input id="c_lawyer" placeholder="ชื่อทนายความ / OA"></div>
+          </div>
+
+          <div class="section-divider">Prescription <span style="font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:0">(Urgency + Gate 1 คำนวณอัตโนมัติ)</span></div>
+          <div class="form-grid col-3" style="margin-bottom:10px">
+            <div class="field">
+              <label>Prescription Type</label>
+              <select id="c_prescriptionType" onchange="onPrescriptionTypeChange();recalcCaseForm()">
+                <option value="">-- เลือก --</option><option>Filing</option><option>Enforcement</option>
+              </select>
+            </div>
+          </div>
+          <div id="prescriptionFilingBlock" class="form-grid col-3" style="margin-bottom:8px">
+            <div class="field">
+              <label>Filing Prescription Expiry</label>
+              <input id="c_filingExpiry" type="date" onchange="recalcCaseForm()">
+            </div>
+            <div class="field">
+              <label>Filing Urgency<span class="auto-label">(คำนวณ)</span></label>
+              <input id="c_filingUrgency" readonly>
+            </div>
+          </div>
+          <div id="prescriptionEnforcBlock" class="form-grid col-3" style="margin-bottom:8px">
+            <div class="field">
+              <label>Enforcement Prescription Expiry</label>
+              <input id="c_enforcExpiry" type="date" onchange="recalcCaseForm()">
+            </div>
+            <div class="field">
+              <label>Enforcement Urgency<span class="auto-label">(คำนวณ)</span></label>
+              <input id="c_enforcUrgency" readonly>
+            </div>
+          </div>
+
+          <div class="section-divider">Gate / Approval <span style="font-size:10px;color:var(--text-muted);font-weight:400;letter-spacing:0">(G1 จาก Expiry · G2 จาก Class · G3 จาก Tier · G4 จาก ROI)</span></div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Gate 1<span class="auto-label">(auto จาก Expiry)</span></label><input id="c_gate1" readonly></div>
+            <div class="field"><label>Gate 2<span class="auto-label">(auto จาก Class)</span></label><input id="c_gate2" readonly></div>
+            <div class="field"><label>Gate 3<span class="auto-label">(auto จาก Tier)</span></label><input id="c_gate3" readonly></div>
+            <div class="field">
+              <label>Gate 4 ROI <span style="font-size:9px;color:var(--text-muted)">(OSB ÷ ค่าใช้จ่ายรวม)</span></label>
+              <input id="c_gate4roi" type="number" step="0.1" placeholder="1.5" oninput="recalcCaseForm()">
+              <span class="hint">&lt;1.2x=Reject · 1.2–1.5x=Exception · &gt;1.5x=Approve · &gt;2x=Priority</span>
+            </div>
+            <div class="field"><label>Gate 4 Decision<span class="auto-label">(auto จาก ROI)</span></label><input id="c_gate4dec" readonly></div>
+            <div class="field"><label>Asset Management Approval Ref</label><input id="c_pamRef" placeholder="Asset Management-APP-XXX"></div>
+            <div class="field"><label>Asset Management Approval Date</label><input id="c_pamDate" type="date"></div>
+          </div>
+
+          <div class="section-divider">ความคืบหน้าคดี</div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Court Filing Date</label><input id="c_filingDate" type="date"></div>
+            <div class="field"><label>Judgment Date</label><input id="c_judgmentDate" type="date"></div>
+            <div class="field"><label>Enforcement Method</label>
+              <select id="c_enforcMethod"><option value="">-- เลือก --</option><option>Asset Seizure</option><option>Bank Account Freeze</option><option>Wage Garnishment</option><option>Other</option></select></div>
+            <div class="field"><label>Enforcement Date</label><input id="c_enforcDate" type="date"></div>
+            <div class="field"><label>Last Action</label><input id="c_lastAction"></div>
+            <div class="field"><label>Next Action Due</label><input id="c_nextAction"></div>
+            <div class="field"><label>Next Action Date</label><input id="c_nextActionDate" type="date"></div>
+            <div class="field"><label>SLA Status<span class="auto-label">(จาก SLA tracker)</span></label>
+              <select id="c_slaStatus"><option value="">-- เลือก --</option><option>On Track</option><option>Breached</option><option>At Risk</option></select></div>
+          </div>
+
+          <div class="section-divider">หมายเหตุ</div>
+          <div class="form-grid">
+            <div class="field form-full"><label>Remarks</label><textarea id="c_remarks" rows="2" placeholder="หมายเหตุ..."></textarea></div>
+            <div class="field"><label>Reviewed By (Asset Management)</label><input id="c_reviewedBy"></div>
+            <div class="field"><label>Review Date</label><input id="c_reviewDate" type="date"></div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="saveCase()">✓ บันทึกคดี</button>
+            <button class="btn btn-secondary" onclick="recalcCaseForm()">🔄 คำนวณ Gate</button>
+            <button class="btn btn-secondary" style="margin-left:auto" onclick="hideCaseForm()">✕ ปิด</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Case Register (<span id="caseCount">0</span>)</div>
+          <div style="font-size:11px;color:var(--text-muted)">Gate Rec. · Urgency · Days to Expiry — คำนวณ live</div>
+        </div>
+        <div id="caseTable"><div class="empty-state"><div class="icon">📁</div><p>โหลดไฟล์ Asset Management หรือกด "เพิ่มคดีใหม่"</p></div></div>
+      </div>
+    </div>
+
+    <!-- ════ SLA TRACKER ════ -->
+    <div class="page" id="page-sla">
+      <div class="page-header">
+        <div><div class="page-title">⏰ SLA Tracker</div><div class="page-sub">Status + Days คำนวณจาก deadline · ดึงข้อมูลจาก Case Register อัตโนมัติ</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary btn-sm" onclick="openMilestoneManager()">⚙️ Milestones</button>
+          <button class="btn btn-primary btn-sm" onclick="showSlaForm()">＋ เพิ่ม SLA Entry</button>
+        </div>
+      </div>
+
+      <div id="slaFormWrap" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="card-title">เพิ่ม / แก้ไข SLA Entry</div><button class="btn btn-secondary btn-sm" onclick="hideSlaForm()">✕</button></div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Case Ref<span class="req">*</span></label><input id="s_caseRef" onblur="onSlaCaseRefChange()" list="s_caseRef_list" placeholder="Tab → ดึงข้อมูล"><datalist id="s_caseRef_list"></datalist></div>
+            <div class="field"><label>Debtor<span class="auto-label">(auto)</span></label><input id="s_debtorName" readonly></div>
+            <div class="field"><label>Assigned To</label><select id="s_assignedTo"><option value="">--</option><option>Internal (IH)</option><option>OA</option></select></div>
+            <div class="field"><label>Category</label><select id="s_category" onchange="onSlaCategoryOrNoChange()"><option value="">--</option><option>Sue</option><option>Subrogation</option><option>Execution</option></select></div>
+            <div class="field"><label>SLA No.<span class="auto-label">(ต่อจากล่าสุด)</span></label><select id="s_slaNo" onchange="onSlaNoChange()"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option></select></div>
+            <div class="field"><label>Milestone<span class="req">*</span><span class="auto-label">(auto จาก SLA No.)</span></label>
+              <select id="s_milestone_sel" onchange="onSlaMilestoneSelect()"><option value="">-- เลือก --</option></select>
+              <input type="hidden" id="s_milestone">
+              <div id="s_milestone_custom_wrap" style="display:none;margin-top:5px"><input id="s_milestone_custom" placeholder="กำหนดเอง..." oninput="setField('s_milestone',this.value)"></div>
+            </div>
+            <div class="field"><label>Trigger Date</label><input id="s_triggerDate" type="date" onchange="onSlaTriggerChange()"></div>
+            <div class="field"><label>Deadline<span class="auto-label">(trigger + SLA days)</span></label><input id="s_deadline" type="date"></div>
+            <div class="field"><label>Status<span class="auto-label">(คำนวณ)</span></label><select id="s_status"><option value="">--</option><option>On Track</option><option>Breached</option><option>At Risk</option><option>Completed</option></select></div>
+            <div class="field"><label>Completion Date</label><input id="s_completionDate" type="date"></div>
+            <div class="field"><label>Lawyer / OA</label><input id="s_lawyer"></div>
+            <div class="field"><label>Escalation</label><select id="s_escalation"><option value="">--</option><option>No</option><option>YES - ESCALATE</option></select></div>
+            <div class="field form-full"><label>Remarks</label><textarea id="s_remarks" rows="2"></textarea></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="saveSla()">✓ บันทึก</button>
+            <button class="btn btn-secondary" onclick="SLA_FIELDS.forEach(id=>setField(id,''))">↺ ล้าง</button>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><div class="card-title">SLA Entries (<span id="slaCount">0</span>)</div></div><div id="slaTable"><div class="empty-state"><div class="icon">⏰</div><p>ยังไม่มีข้อมูล</p></div></div></div>
+    </div>
+
+    <!-- ════ PRESCRIPTION WATCH ════ -->
+    <div class="page" id="page-prescription">
+      <div class="page-header">
+        <div><div class="page-title">🚨 Prescription Watch</div><div class="page-sub">Urgency + Gate 1 คำนวณจากวันนี้ live · Days Left อัปเดตทันที</div></div>
+        <button class="btn btn-primary btn-sm" onclick="showPrescForm()">＋ เพิ่มรายการ</button>
+      </div>
+      <div id="prescriptFormWrap" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="card-title">เพิ่ม / แก้ไข Prescription Watch</div><button class="btn btn-secondary btn-sm" onclick="hidePrescForm()">✕</button></div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Case Ref<span class="req">*</span></label><input id="p_caseRef" onblur="onPrescCaseRefChange()" list="p_caseRef_list" placeholder="Tab → ดึงข้อมูล"><datalist id="p_caseRef_list"></datalist></div>
+            <div class="field"><label>Debtor<span class="auto-label">(auto)</span></label><input id="p_debtorName" readonly></div>
+            <div class="field"><label>Portfolio<span class="auto-label">(auto)</span></label><input id="p_portfolio" readonly></div>
+            <div class="field"><label>OSB<span class="auto-label">(auto)</span></label><input id="p_osb" type="number" readonly></div>
+            <div class="field"><label>Assigned To<span class="auto-label">(auto)</span></label><select id="p_assignedTo"><option value="">--</option><option>Internal (IH)</option><option>OA</option></select></div>
+            <div class="field"><label>Prescription Type</label><select id="p_prescriptionType" onchange="onPrescTypeChange()"><option value="">--</option><option>Filing</option><option>Enforcement</option></select></div>
+            <div class="field"><label>Expiry Date</label><input id="p_expiryDate" type="date" onchange="onPrescExpiryChange()"><span class="hint">กรอก → Urgency + Gate 1 คำนวณเอง</span></div>
+            <div class="field"><label>Urgency<span class="auto-label">(live)</span></label><div class="urgency-display"><span id="p_urgency_badge" class="badge badge-gray">—</span></div><input type="hidden" id="p_urgency"></div>
+            <div class="field"><label>Gate 1<span class="auto-label">(auto)</span></label><input id="p_gate1" readonly></div>
+            <div class="field"><label>Action Required<span class="auto-label">(hint)</span></label><input id="p_actionRequired"></div>
+            <div class="field"><label>Action Owner<span class="auto-label">(auto)</span></label><input id="p_actionOwner"></div>
+            <div class="field"><label>Action Deadline<span class="auto-label">(+3d ถ้า FAST)</span></label><input id="p_actionDeadline" type="date"></div>
+            <div class="field"><label>Status</label><select id="p_status"><option value="">--</option><option>Pending</option><option>In Progress</option><option>Done</option></select></div>
+            <div class="field form-full"><label>Remarks</label><textarea id="p_remarks" rows="2"></textarea></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="savePresc()">✓ บันทึก</button>
+            <button class="btn btn-secondary" onclick="PRESC_FIELDS.forEach(id=>setField(id,''))">↺ ล้าง</button>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><div class="card-title">Prescription Watch (<span id="prescriptCount">0</span>)</div><div style="font-size:11px;color:var(--text-muted)">Live urgency · Gate 1 คำนวณใหม่ทุก render</div></div><div id="prescriptTable"><div class="empty-state"><div class="icon">🚨</div><p>ยังไม่มีข้อมูล</p></div></div></div>
+    </div>
+
+    <!-- ════ REIMBURSEMENT ════ -->
+    <div class="page" id="page-reimburse">
+      <div class="page-header">
+        <div><div class="page-title">💰 Reimbursement</div><div class="page-sub">Preset ค่าใช้จ่ายแยกตาม Filing/Enforcement · REQ No. auto-generate</div></div>
+        <button class="btn btn-primary btn-sm" onclick="showReimbForm()">＋ เพิ่มรายการเบิก</button>
+      </div>
+      <div id="reimburseFormWrap" style="display:none">
+        <div class="card">
+          <div class="card-header"><div class="card-title">เพิ่ม / แก้ไข รายการเบิกจ่าย</div><button class="btn btn-secondary btn-sm" onclick="hideReimbForm()">✕</button></div>
+          <div class="form-grid col-3">
+            <div class="field"><label>Request No.<span class="req">*</span><span class="auto-label">(auto)</span></label><input id="r_reqNo" placeholder="REQ-001"></div>
+            <div class="field"><label>Lawyer / OA</label><input id="r_lawyer"></div>
+            <div class="field"><label>Case Ref</label><input id="r_caseRef" onblur="onReimbCaseRefChange()" list="r_caseRef_list" placeholder="Tab → ดึงข้อมูล"><datalist id="r_caseRef_list"></datalist></div>
+            <div class="field"><label>Debtor<span class="auto-label">(auto)</span></label><input id="r_debtorName" readonly></div>
+            <div class="field"><label>Expense Type<span class="req">*</span></label>
+              <select id="r_expenseType" onchange="onReimbExpenseSelect()"><option value="">-- เลือก Work Type จาก Case Ref ก่อน --</option></select>
+              <div id="r_expenseCustomWrap" style="display:none;margin-top:6px"><input id="r_expenseCustom" placeholder="กรอกเอง..."></div>
+            </div>
+            <div class="field"><label>Amount (THB)</label><input id="r_amount" type="number" placeholder="0"></div>
+            <div class="field"><label>Payment Status</label><select id="r_payStatus"><option value="">--</option><option>Pending</option><option>Paid</option><option>Overdue</option><option>Cancelled</option></select></div>
+            <div class="field"><label>Payment Date</label><input id="r_payDate" type="date"></div>
+            <div class="field"><label>Advance (THB)</label><input id="r_advance" type="number" placeholder="0"></div>
+            <div class="field"><label>Advance Date</label><input id="r_advanceDate" type="date"></div>
+            <div class="field"><label>Receipt</label><select id="r_receipt"><option value="">--</option><option>Yes</option><option>No</option></select></div>
+            <div class="field"><label>Reimbursement Ref</label><input id="r_reimbRef" placeholder="Asset Management-EXP-XXX"></div>
+            <div class="field"><label>Approved By</label><input id="r_approvedBy"></div>
+            <div class="field form-full"><label>Remarks</label><textarea id="r_remarks" rows="2"></textarea></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <button class="btn btn-primary" onclick="saveReimb()">✓ บันทึก</button>
+            <button class="btn btn-secondary" onclick="REIMB_FIELDS.forEach(id=>setField(id,''))">↺ ล้าง</button>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="card-header"><div class="card-title">รายการเบิกจ่าย (<span id="reimburseCount">0</span>)</div></div><div id="reimburseTable"><div class="empty-state"><div class="icon">💰</div><p>ยังไม่มีข้อมูล</p></div></div></div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- ════ CONFIRM MODAL ════ -->
+<div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)_confirmResult(false)">
+  <div class="modal-box" style="width:360px">
+    <div style="font-size:14px;font-weight:600;margin-bottom:10px">⚠️ ยืนยัน</div>
+    <div id="confirmMsg" style="font-size:13px;color:var(--text-dim);line-height:1.5"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary btn-sm" onclick="_confirmResult(false)">ยกเลิก</button>
+      <button class="btn btn-danger btn-sm" id="confirmOk" onclick="_confirmResult(true)">🗑 ลบ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MILESTONE MANAGER ════ -->
+<div class="modal-overlay" id="milestoneManagerModal" onclick="if(event.target===this)closeMilestoneManager()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div style="font-size:15px;font-weight:600">⚙️ จัดการ SLA Milestones</div><div style="font-size:11px;color:var(--text-dim);margin-top:2px">มีผลทันที — reset เมื่อรีโหลดหน้า</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="closeMilestoneManager()">✕</button>
+    </div>
+    <div id="milestoneManagerBody"></div>
+  </div>
+</div>
+
+<!-- ── Scripts ── -->
+<script src="js/utils.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/main.js"></script>
+<script src="js/kpi.js"></script>
+<script src="js/forecast.js"></script>
+</body>
+</html>
