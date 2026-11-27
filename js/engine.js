@@ -145,7 +145,7 @@ function nextReqNo() {
 // LAW_STEP IMPORT ENGINE
 // ═══════════════════════════════════════════════════════════════
 
-// Status mapping from LawStep existedstatus → Asset Management Legal Status
+// Status mapping from LawStep existedstatus → Legal Status
 const LAWSTEP_STATUS_MAP = {
   'Closed':          'Closed',
   'JM':              'Judgment',
@@ -163,7 +163,7 @@ const LAWSTEP_STATUS_MAP = {
   'Bankruptcy':      'Closed',
 };
 
-// LawStep field → Asset Management field mapping
+// LawStep field → case field mapping
 function lawstepRowToCase(law, existingCase) {
   const contractNo = String(law['lawstep_newcontractnumber']||'').trim();
   const rawStatus  = String(law['lawstep_existedstatus']||'');
@@ -223,14 +223,14 @@ function lawstepRowToCase(law, existingCase) {
   const judgementSum    = String(law['lawstep_judgementsum']||'');
   const remarks         = [judgementResult, judgementSum].filter(Boolean).join(' | ').slice(0,200);
 
-  // Keep existing Asset Management data for fields not in LawStep
+  // Keep existing case data for fields not in LawStep
   const base = existingCase || {};
 
   return {
     caseRef:          contractNo,
     debtorName:       String(law['lawstep_name']||base.debtorName||''),
     portfolio:        portCode||base.portfolio||'',
-    osb:              base.osb||'',                          // OSB comes from Asset Management, not LawStep
+    osb:              base.osb||'',                          // OSB comes from the case workbook, not LawStep
     tier:             base.tier||osbToTier(base.osb)||'',
     debtorClass:      base.debtorClass||'',
     legalStatus,
@@ -275,6 +275,11 @@ function lawstepRowToCase(law, existingCase) {
   };
 }
 
+// Source exports may put a system prefix in front of field names (e.g. <prefix>lawstep_name); drop it.
+function neutralKey(h) {
+  return String(h).trim().replace(/^[a-z]*?(?=lawstep_|oareport_)/i, '');
+}
+
 // Process full LawStep import
 function processLawstepImport(lawWs) {
   const rows = XLSX.utils.sheet_to_json(lawWs, { header: 1, defval: '' });
@@ -291,7 +296,7 @@ function processLawstepImport(lawWs) {
     const r = rows[i];
     // Convert row array to object using header map
     const law = {};
-    headers.forEach((h, ci) => { if (h) law[h] = r[ci]; });
+    headers.forEach((h, ci) => { if (h) law[neutralKey(h)] = r[ci]; });
     // Also preserve numeric indexes for unnamed columns
     r.forEach((val, ci) => { law[ci] = val; });
 
@@ -327,7 +332,7 @@ function processLawstepImport(lawWs) {
 // ═══════════════════════════════════════════════════════════════
 APP.slaMilestones = {
   Sue: {
-    1: { label: 'Case approval by Asset Management',             days: 3  },
+    1: { label: 'Case approval by management',             days: 3  },
     2: { label: 'Complete documents sent to OA',    days: 7  },
     3: { label: 'Legal notice sent to debtor',      days: 7  },
     4: { label: 'File lawsuit to court',            days: 30 },
@@ -337,7 +342,7 @@ APP.slaMilestones = {
     8: { label: 'Prepare appeal/cassation draft',   days: 30 },
   },
   Subrogation: {
-    1: { label: 'Subrogation case approval by Asset Management', days: 3  },
+    1: { label: 'Subrogation case approval by management', days: 3  },
     2: { label: 'Insurance documents verified',     days: 5  },
     3: { label: 'File subrogation claim',           days: 30 },
     4: { label: 'Respond to counter-claim',         days: 14 },

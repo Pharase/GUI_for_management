@@ -1,4 +1,4 @@
-# Asset Management Litigation Monitor — v3
+# Litigation Monitor — v3
 
 > Litigation Weekly Monitoring System  
 > A browser-based, zero-install tool that uses `Litigation_Weekly_Monitor.xlsx` as a live database and `Law_Step.xlsx` as a delta-update feed.
@@ -26,9 +26,9 @@
 
 ## 1. Overview
 
-Asset Management Litigation Monitor is a **single-page web application** that turns `Litigation_Weekly_Monitor.xlsx` into an interactive case management database. It supports:
+Litigation Monitor is a **single-page web application** that turns `Litigation_Weekly_Monitor.xlsx` into an interactive case management database. It supports:
 
-- **Read + Write** to the Asset Management workbook (all 4 active sheets)
+- **Read + Write** to the case workbook (all 4 active sheets)
 - **Delta-import** from `Law_Step.xlsx` to sync case status updates without re-keying data
 - **Automated Gate evaluation** (Gate 1–4) derived from the Reference sheet rules
 - **Zero install** — runs entirely in-browser, no server, no database
@@ -66,7 +66,7 @@ Asset Management Litigation Monitor is a **single-page web application** that tu
 │                               │  └─────────────────────┘   │    │
 │                               │  ┌─────────────────────┐   │    │
 │                               │  │  LawStep Mapper     │   │    │
-│                               │  │  lawstepRowToPam()  │   │    │
+│                               │  │  lawstepRowToCase()  │   │    │
 │                               │  │  processLawstep()   │   │    │
 │                               │  └─────────────────────┘   │    │
 │                               └─────────────┬──────────────┘    │
@@ -91,12 +91,12 @@ Asset Management Litigation Monitor is a **single-page web application** that tu
 **Data flow (Waterfall):**
 
 ```
-1. LOAD    Asset Management.xlsx ──────► parse 4 sheets ──► APP.caseData / slaData / prescriptData / reimburseData
+1. LOAD    Litigation.xlsx ──────► parse 4 sheets ──► APP.caseData / slaData / prescriptData / reimburseData
 2. ENRICH  gate1Urgency() re-calculates urgency from today on every load
 3. IMPORT  Law_Step.xlsx ─► processLawstepImport() ─► merge into APP.caseData
 4. DISPLAY render*Table() ─► virtual pagination + search + filter
 5. EDIT    CRUD forms ─────► update APP.* arrays in memory
-6. SAVE    exportExcel() ──► write all arrays back to Asset Management.xlsx ─► download
+6. SAVE    exportExcel() ──► write all arrays back to Litigation.xlsx ─► download
 ```
 
 ---
@@ -104,14 +104,14 @@ Asset Management Litigation Monitor is a **single-page web application** that tu
 ## 3. File Structure
 
 ```
-v3/
+litigation_monitor_v3/
 │
 ├── index.html            Main UI (HTML shell + form definitions)
 │
 ├── js/
 │   ├── utils.js          State, helpers, search/pagination, keyboard, confirm modal
 │   ├── engine.js         Business rules (Gate 1–4), LawStep mapper, SLA milestones
-│   ├── main.js           Load/Save Asset Management, CRUD for all 4 sheets, render functions
+│   ├── main.js           Load/Save case workbook, CRUD for all 4 sheets, render functions
 │   ├── kpi.js            Dashboard SVG charts (5 chart types)
 │   └── forecast.js       Forecast helpers (placeholder — extend here)
 │
@@ -128,7 +128,7 @@ v3/
 ```
 utils.js  →  engine.js  →  main.js  →  kpi.js  →  forecast.js
 ```
-`engine.js` must load before `main.js` because `main.js` calls `gate1Urgency()`, `evaluateAllGates()`, and `osbToTier()` during Asset Management load.
+`engine.js` must load before `main.js` because `main.js` calls `gate1Urgency()`, `evaluateAllGates()`, and `osbToTier()` during workbook load.
 
 ---
 
@@ -182,7 +182,7 @@ Single sheet: `LAWSTEP ALL`
 
 **Key fields used by the import engine:**
 
-| LawStep field | Maps to Asset Management field |
+| LawStep field | Maps to case field |
 |---|---|
 | `lawstep_newcontractnumber` | `caseRef` (join key) |
 | `lawstep_name` | `debtorName` |
@@ -199,7 +199,7 @@ Single sheet: `LAWSTEP ALL`
 
 ## 5. Business Rules Engine — Gate Logic
 
-All rules are sourced from the `📖 Reference` sheet of the Asset Management workbook.
+All rules are sourced from the `📖 Reference` sheet of the case workbook.
 
 ### Gate 1 — Prescription Control
 
@@ -317,17 +317,17 @@ All other cases                         →  OA
 | `addDays(dateStr, days)` | Add N calendar days to a date string |
 | `getCaseByRef(caseRef)` | Lookup case object from `APP.caseData` |
 | `nextReqNo()` | Auto-generate next REQ number |
-| `LAWSTEP_STATUS_MAP` | Lookup table: LawStep status → Asset Management Legal Status |
-| `lawstepRowToCase(law, existingCase)` | Map one LawStep row to Asset Management case object |
+| `LAWSTEP_STATUS_MAP` | Lookup table: LawStep status → Legal Status |
+| `lawstepRowToCase(law, existingCase)` | Map one LawStep row to case object |
 | `processLawstepImport(lawWs)` | Process full LawStep sheet, returns `{updated, added, skipped}` |
 
 ### `main.js`
 
 | Function | Purpose |
 |---|---|
-| `loadCases(e)` | Read Asset Management xlsx, parse all 4 sheets into APP arrays |
+| `loadCases(e)` | Read case workbook, parse all 4 sheets into APP arrays |
 | `loadLawStep(e)` | Read Law_Step.xlsx, call `processLawstepImport` |
-| `exportExcel()` | Write all APP arrays back to Asset Management workbook + download |
+| `exportExcel()` | Write all APP arrays back to case workbook + download |
 | `clearSheetRows(ws, fromRow)` | Clear data rows in a worksheet before rewrite |
 | `recalcCaseForm()` | Live recalculate all Gate fields while user types |
 | `updateGateSummary()` | Render Gate summary chips in the case form |
@@ -354,8 +354,8 @@ All other cases                         →  OA
 ### Option B — Development Mode
 
 ```bash
-# Clone or unzip v3/
-cd v3
+# Clone or unzip litigation_monitor_v3/
+cd litigation_monitor_v3
 
 # Open index.html directly in browser
 # (Note: some browsers block local file:// script loading)
@@ -367,7 +367,7 @@ python3 -m http.server 8080
 ### Option C — Rebuild Single File
 
 ```bash
-cd v3
+cd litigation_monitor_v3
 python3 deploy.py
 # Output: dist/app.html (~130 KB)
 ```
@@ -375,12 +375,12 @@ python3 deploy.py
 ### First Use
 
 1. Open the app
-2. Click **📂 โหลด Asset Management** → select `Litigation_Weekly_Monitor.xlsx`
+2. Click **📂 โหลดไฟล์** → select `Litigation_Weekly_Monitor.xlsx`
 3. All 4 sheets load automatically. Gate fields recalculate immediately.
 4. Optionally click **🔄 Import LawStep** → select `Law_Step.xlsx`
 5. Make edits or additions
 6. Click **⬇️ บันทึก / Export** (or `Ctrl+S`) → downloads `Litigation_Updated.xlsx`
-7. Rename and replace your working copy of the Asset Management file
+7. Rename and replace your working copy of the case workbook
 
 ---
 
@@ -403,7 +403,7 @@ python3 deploy.py
 ### Updating from LawStep
 
 1. Receive new `Law_Step.xlsx` from legal team
-2. In the app (with Asset Management already loaded): click **🔄 Import LawStep**
+2. In the app (with the case workbook already loaded): click **🔄 Import LawStep**
 3. System matches on `lawstep_newcontractnumber` = `Case Ref No.`
 4. Result toast shows: `เพิ่ม X | อัปเดต Y | ข้าม Z รายการ`
 5. Review changes in Case Register table
@@ -446,7 +446,7 @@ Law_Step.xlsx
     │   ├─ Map status (ฟ้อง/สวมสิทธิ) → prescriptionType
     │   ├─ Map dates: filingdate, judgementdate, enforcereqdate
     │   ├─ Generate lastAction / nextAction from legalStatus
-    │   └─ PRESERVE Asset Management-only fields: osb, tier, debtorClass, expiry dates, gates
+    │   └─ PRESERVE workbook-only fields: osb, tier, debtorClass, expiry dates, gates
     │
     ├─ evaluateAllGates(caseRow) → fill gate1/2/3/dec if empty
     │
@@ -456,7 +456,7 @@ Law_Step.xlsx
 
 **LAWSTEP_STATUS_MAP** (complete mapping):
 
-| LawStep status | Asset Management Legal Status |
+| LawStep status | Legal Status |
 |---|---|
 | Closed | Closed |
 | JM | Judgment |
@@ -493,7 +493,7 @@ Law_Step.xlsx
 | Action Deadline | Urgency becomes FAST TRACK | Today + 3 days |
 | Days Left | Any table render | `daysFromNow(expiryDate)` — live on every render |
 | Gate Recommendation | Any gate changes | `evaluateAllGates(row).recommend` |
-| All Gates on Load | Asset Management file loaded | All urgency/gate fields recalculated from today |
+| All Gates on Load | case workbook loaded | All urgency/gate fields recalculated from today |
 | All Gates on Export | Export triggered | Recalculated one final time before writing |
 
 ---
@@ -502,7 +502,7 @@ Law_Step.xlsx
 
 | Shortcut | Action |
 |---|---|
-| `Ctrl+S` / `Cmd+S` | Export / Save Asset Management workbook |
+| `Ctrl+S` / `Cmd+S` | Export / Save case workbook |
 | `Ctrl+F` / `Cmd+F` | Focus search input on current page |
 | `Esc` | Close any open form / modal |
 
@@ -513,7 +513,7 @@ Law_Step.xlsx
 ### Build single file
 
 ```bash
-cd v3
+cd litigation_monitor_v3
 python3 deploy.py
 # → dist/app.html  (~130 KB, fully self-contained)
 ```
@@ -550,10 +550,10 @@ The deploy script:
 | # | Limitation | Workaround |
 |---|---|---|
 | 1 | No server — all data in browser memory | Export frequently; data lost on page refresh |
-| 2 | OSB field not in LawStep — comes from Asset Management only | Ensure Asset Management file has OSB before importing LawStep |
+| 2 | OSB field not in LawStep — comes from the case workbook only | Ensure case workbook has OSB before importing LawStep |
 | 3 | SLA Milestone customizations reset on page reload | Edit `APP.slaMilestones` in `engine.js` for permanent changes |
 | 4 | `file://` protocol may block scripts in some browsers | Use `python3 -m http.server` or `dist/app.html` |
-| 5 | Excel formulas in Asset Management are replaced with values on export | Use Asset Management file's formula sheet for reporting; this tool manages data rows only |
+| 5 | Excel formulas in the case workbook are replaced with values on export | Use case workbook's formula sheet for reporting; this tool manages data rows only |
 | 6 | Large files (>5000 cases) may feel slow on first render | Pagination at 50 rows mitigates this |
 | 7 | Gate 4 ROI requires manual input | Calculate ROI externally (OSB ÷ estimated legal costs) and paste |
 
@@ -564,7 +564,7 @@ The deploy script:
 ### v3.0.0 — 2026-03-24
 - **NEW**: `engine.js` — dedicated Gate Logic Engine with full Gate 1–4 auto-calculation
 - **NEW**: LawStep import pipeline (`processLawstepImport`, `lawstepRowToCase`, `LAWSTEP_STATUS_MAP`)
-- **NEW**: Asset Management workbook used as primary read/write database
+- **NEW**: case workbook used as primary read/write database
 - **NEW**: Gate Summary live preview panel inside case form
 - **NEW**: Auto-seed SLA #1 and Prescription Watch on new case save
 - **NEW**: `deploy.py` single-file bundler

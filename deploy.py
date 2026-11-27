@@ -1,5 +1,5 @@
 """
-deploy.py — Bundle Asset Management Litigation Monitor into a single portable HTML file.
+deploy.py — Bundle Litigation Monitor into a single portable HTML file.
 
 Usage:
     python deploy.py

@@ -1,4 +1,4 @@
-# Asset Management Litigation Monitor — Test Cases
+# Litigation Monitor — Test Cases
 
 > **Author:** Senior Data Engineer + QA Engineer perspective  
 > **Version under test:** v3.0.0  
@@ -13,7 +13,7 @@
 |---|---|---|
 | TC-GATE | Gate Logic Engine (unit) | 24 |
 | TC-MAP | LawStep Field Mapping | 10 |
-| TC-LOAD | Asset Management File Loading | 8 |
+| TC-LOAD | Case Workbook Loading | 8 |
 | TC-IMP | LawStep Import Pipeline | 10 |
 | TC-CRUD | Case Register CRUD | 9 |
 | TC-SLA | SLA Tracker | 6 |
@@ -279,16 +279,16 @@ These are pure logic tests — no DOM, no Excel required.
 
 ---
 
-### TC-MAP-010: Asset Management-only fields preserved during merge
-**Scenario:** Case exists in Asset Management with `osb = 250000`, `debtorClass = 'B'`.  
+### TC-MAP-010: workbook-only fields preserved during merge
+**Scenario:** Case exists in the case workbook with `osb = 250000`, `debtorClass = 'B'`.  
 LawStep row for same contract has status update (JM).  
 **Function:** `lawstepRowToCase(law, existingCase)`  
 **Expected:** Resulting row has `osb = 250000`, `debtorClass = 'B'` unchanged.  
-**Acceptance:** LawStep import must NOT overwrite Asset Management financial data.
+**Acceptance:** LawStep import must NOT overwrite workbook financial data.
 
 ---
 
-## TC-LOAD — Asset Management File Loading Tests
+## TC-LOAD — Case Workbook Loading Tests
 
 ---
 
@@ -307,32 +307,32 @@ LawStep row for same contract has status update (JM).
 ---
 
 ### TC-LOAD-002: Urgency recalculated on load
-**Setup:** Asset Management file has case with `filingExpiry = '2020-01-01'` (past date, stored as "Normal" in file)  
+**Setup:** case workbook has case with `filingExpiry = '2020-01-01'` (past date, stored as "Normal" in file)  
 **Expected:** After load, `caseData[n].filingUrgency === 'EXPIRED'`  
 **Acceptance:** Stored urgency in file is overridden by live calculation
 
 ---
 
 ### TC-LOAD-003: Tier auto-assigned when missing
-**Setup:** Asset Management row has `OSB = 75000` and blank Tier column  
+**Setup:** workbook row has `OSB = 75000` and blank Tier column  
 **Expected:** `caseData[n].tier === 'Tier 2'`
 
 ---
 
 ### TC-LOAD-004: Rows with blank Case Ref skipped
-**Setup:** Asset Management sheet has 3 data rows; 1 has blank Case Ref  
+**Setup:** workbook sheet has 3 data rows; 1 has blank Case Ref  
 **Expected:** `APP.caseData.length === 2` (blank row skipped)
 
 ---
 
 ### TC-LOAD-005: Rows with "NaN" Case Ref skipped
-**Setup:** Asset Management row where Case Ref parsed as NaN (empty numeric cell)  
+**Setup:** workbook row where Case Ref parsed as NaN (empty numeric cell)  
 **Expected:** Row excluded from `APP.caseData`
 
 ---
 
 ### TC-LOAD-006: Reimbursement TOTALS row skipped
-**Setup:** Asset Management Reimbursement sheet has a row where col[0] = "TOTALS"  
+**Setup:** workbook Reimbursement sheet has a row where col[0] = "TOTALS"  
 **Expected:** That row NOT in `APP.reimburseData`
 
 ---
@@ -344,7 +344,7 @@ LawStep row for same contract has status update (JM).
 ---
 
 ### TC-LOAD-008: Skeleton loader shown during parse
-**Setup:** Begin loading a large Asset Management file  
+**Setup:** Begin loading a large case workbook  
 **Expected:** `caseTable` innerHTML contains `skel` class elements before parse completes
 
 ---
@@ -353,14 +353,14 @@ LawStep row for same contract has status update (JM).
 
 ---
 
-### TC-IMP-001: Import without Asset Management loaded shows error
+### TC-IMP-001: Import without the case workbook loaded shows error
 **Setup:** `APP.workbook === null`; user triggers LawStep import  
 **Expected:** `toast()` with type `'error'`; import aborts
 
 ---
 
 ### TC-IMP-002: Matching case gets updated
-**Setup:** Asset Management has case `02200001`. LawStep has row with same contract number, status `JM`.  
+**Setup:** The workbook has case `02200001`. LawStep has row with same contract number, status `JM`.  
 **Expected:**
 - `APP.caseData` entry for `02200001` has `legalStatus === 'Judgment'`
 - Return value: `{ updated: 1, added: 0 }`
@@ -368,7 +368,7 @@ LawStep row for same contract has status update (JM).
 ---
 
 ### TC-IMP-003: New case in LawStep gets added
-**Setup:** Asset Management has 100 cases. LawStep has 1 new contract number not in Asset Management.  
+**Setup:** The workbook has 100 cases. LawStep has 1 new contract number not in the case workbook.  
 **Expected:** `APP.caseData.length === 101`; return `added: 1`
 
 ---
@@ -379,14 +379,14 @@ LawStep row for same contract has status update (JM).
 
 ---
 
-### TC-IMP-005: OSB preserved from Asset Management during update
-**Setup:** Asset Management case has `osb = 500000`. LawStep update for same case has no OSB field.  
+### TC-IMP-005: OSB preserved from case workbook during update
+**Setup:** case workbook case has `osb = 500000`. LawStep update for same case has no OSB field.  
 **Expected:** After import, `osb === 500000` (unchanged)
 
 ---
 
 ### TC-IMP-006: Gates recalculated after import
-**Setup:** Asset Management case has `filingExpiry = '2030-01-01'` (Normal). LawStep sets `legalStatus = 'Enforcement'`.  
+**Setup:** case workbook case has `filingExpiry = '2030-01-01'` (Normal). LawStep sets `legalStatus = 'Enforcement'`.  
 **Expected:** After import, `filingUrgency === 'Normal'` (recalculated from expiry, not overwritten)
 
 ---
@@ -667,7 +667,7 @@ LawStep row for same contract has status update (JM).
 
 ---
 
-### TC-EXP-001: Export without Asset Management loaded shows error
+### TC-EXP-001: Export without the case workbook loaded shows error
 **Setup:** `APP.workbook === null`  
 **Action:** `exportExcel()`  
 **Expected:** Error toast; no file download triggered
@@ -838,7 +838,7 @@ const LAWSTEP_FIXTURE = {
 - [ ] Clear browser cache if re-running
 
 ### Smoke test (5 min)
-- [ ] Load Asset Management file → no console errors → data appears
+- [ ] Load case workbook → no console errors → data appears
 - [ ] Navigate all 4 tabs → data shows in each
 - [ ] Import LawStep → counts change
 - [ ] Export → file downloads → re-open in Excel → data intact
@@ -852,7 +852,7 @@ const LAWSTEP_FIXTURE = {
 ### Performance baseline
 | Scenario | Acceptable |
 |---|---|
-| Load 8000 case Asset Management file | < 3 seconds |
+| Load 8000 case case workbook | < 3 seconds |
 | LawStep import 1200 rows | < 2 seconds |
 | Render table with search | < 500ms |
 | Export 8000 cases | < 5 seconds |

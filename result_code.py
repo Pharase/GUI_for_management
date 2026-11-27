@@ -1,7 +1,14 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import os
 import re
+import sys
+
+
+def neutral_key(column):
+    """Drop a source-system prefix in front of report fields, e.g. <prefix>oareport_x -> oareport_x."""
+    return re.sub(r"^[a-z]*?(?=oareport_|lawstep_)", "", str(column), flags=re.I)
 
 def process_debtor_data(file_path, specific_result_codes=None):
     """
@@ -17,7 +24,7 @@ def process_debtor_data(file_path, specific_result_codes=None):
     
     try:
         # Read the Excel file
-        df = pd.read_excel(file_path)
+        df = pd.read_excel(file_path).rename(columns=neutral_key)
         
         print(f"Data loaded successfully. Shape: {df.shape}")
         print("Columns available:")
@@ -195,9 +202,7 @@ def main(input_file, output_file, specific_codes=None):
     # Create sample data if needed (uncomment to create sample)
     # create_sample_excel(input_file)
     
-    # Define specific result codes to filter (optional)
-    # Set to None to include all codes, or specify a list like [6, 12, 15]
-    specific_codes = [6, 12]  # Example: only show codes 6 and 12
+    # specific_codes: list of result codes to keep, or None for all codes
     
     print("Processing debtor data...")
     
@@ -244,7 +249,7 @@ def process_debtor_data_flexible(file_path, contract_col=None, result_code_col=N
     
     try:
         # Read the Excel file
-        df = pd.read_excel(file_path)
+        df = pd.read_excel(file_path).rename(columns=neutral_key)
         
         print(f"Data loaded successfully. Shape: {df.shape}")
         
@@ -329,16 +334,13 @@ def example_usage():
         save_report_to_excel(report_df2, 'output_report_explicit.xlsx')
 
 if __name__ == "__main__":
-    
-    today = datetime.now()
-    formatted_date = today.strftime('%y%m%d')
-    
-    # Run the main function
-    input_file = r"C:\reports\Phone_report\Phone_report_2025-07-07_bi.xlsx"  # Change this to your actual Excel file path
-    output_file = f"C:\reports\Phone_report\output_report_explicit_{formatted_date}.xlsx"  # Change this to your desired output file path
-    specific_codes = ["IMP","BKR","DCD"]  # Change this to your desired result codes
-    
+    # Usage: python result_code.py input.xlsx [output.xlsx] [CODE1,CODE2,...]
+    if len(sys.argv) < 2:
+        sys.exit("Usage: python result_code.py input.xlsx [output.xlsx] [IMP,BKR,DCD]")
+    input_file = sys.argv[1]
+    formatted_date = datetime.now().strftime('%y%m%d')
+    output_file = sys.argv[2] if len(sys.argv) > 2 else os.path.join(
+        os.path.dirname(os.path.abspath(input_file)), f"output_report_explicit_{formatted_date}.xlsx")
+    specific_codes = sys.argv[3].split(",") if len(sys.argv) > 3 else ["IMP", "BKR", "DCD"]
+
     main(input_file, output_file, specific_codes)
-    
-    # Uncomment to run example usage
-    # example_usage()

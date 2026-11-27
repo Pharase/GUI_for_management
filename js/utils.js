@@ -158,7 +158,7 @@ document.addEventListener('keydown',e=>{
     const mm=document.getElementById('milestoneManagerModal');
     if(mm&&mm.style.display!=='none') closeMilestoneManager();
   }
-  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(APP.workbook) exportExcel();else toast('โหลดไฟล์ Asset Management ก่อน','warn');}
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(APP.workbook) exportExcel();else toast('โหลดไฟล์ฐานข้อมูล ก่อน','warn');}
   if((e.ctrlKey||e.metaKey)&&e.key==='f'){
     const si=document.querySelector('.page.active .search-input');
     if(si){e.preventDefault();si.focus();si.select();}

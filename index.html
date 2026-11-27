@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Asset Management Litigation Monitor</title>
+  <title>Litigation Monitor</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -24,15 +24,15 @@
 
 <!-- ── Header ── -->
 <header>
-  <div class="logo">Asset Management <span>Litigation</span></div>
+  <div class="logo">Litigation <span>Monitor</span></div>
   <div class="divider"></div>
   <div class="file-status" id="fileStatus">
     <div class="dot"></div>
-    <span id="fileStatusText">ลากไฟล์ Asset Management.xlsx วางที่นี่ หรือกด "โหลด Asset Management"</span>
+    <span id="fileStatusText">ลากไฟล์ Litigation.xlsx วางที่นี่ หรือกด "โหลดไฟล์"</span>
   </div>
   <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);flex-shrink:0">Ctrl+S บันทึก · Ctrl+F ค้นหา · Esc ปิด</span>
   <div class="header-actions">
-    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('caseFileInput').click()">📂 โหลด Asset Management</button>
+    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('caseFileInput').click()">📂 โหลดไฟล์</button>
     <button class="btn btn-secondary btn-sm" id="btnLawstep" disabled onclick="document.getElementById('lawstepInput').click()">🔄 Import LawStep</button>
     <button class="btn btn-success btn-sm"  id="btnExport"  disabled onclick="exportExcel()">⬇️ บันทึก / Export</button>
   </div>
@@ -188,8 +188,8 @@
               <span class="hint">&lt;1.2x=Reject · 1.2–1.5x=Exception · &gt;1.5x=Approve · &gt;2x=Priority</span>
             </div>
             <div class="field"><label>Gate 4 Decision<span class="auto-label">(auto จาก ROI)</span></label><input id="c_gate4dec" readonly></div>
-            <div class="field"><label>Asset Management Approval Ref</label><input id="c_pamRef" placeholder="Asset Management-APP-XXX"></div>
-            <div class="field"><label>Asset Management Approval Date</label><input id="c_pamDate" type="date"></div>
+            <div class="field"><label>Approval Ref</label><input id="c_approvalRef" placeholder="APP-XXX"></div>
+            <div class="field"><label>Approval Date</label><input id="c_approvalDate" type="date"></div>
           </div>
 
           <div class="section-divider">ความคืบหน้าคดี</div>
@@ -209,7 +209,7 @@
           <div class="section-divider">หมายเหตุ</div>
           <div class="form-grid">
             <div class="field form-full"><label>Remarks</label><textarea id="c_remarks" rows="2" placeholder="หมายเหตุ..."></textarea></div>
-            <div class="field"><label>Reviewed By (Asset Management)</label><input id="c_reviewedBy"></div>
+            <div class="field"><label>Reviewed By</label><input id="c_reviewedBy"></div>
             <div class="field"><label>Review Date</label><input id="c_reviewDate" type="date"></div>
           </div>
 
@@ -226,7 +226,7 @@
           <div class="card-title">Case Register (<span id="caseCount">0</span>)</div>
           <div style="font-size:11px;color:var(--text-muted)">Gate Rec. · Urgency · Days to Expiry — คำนวณ live</div>
         </div>
-        <div id="caseTable"><div class="empty-state"><div class="icon">📁</div><p>โหลดไฟล์ Asset Management หรือกด "เพิ่มคดีใหม่"</p></div></div>
+        <div id="caseTable"><div class="empty-state"><div class="icon">📁</div><p>โหลดไฟล์ฐานข้อมูล หรือกด "เพิ่มคดีใหม่"</p></div></div>
       </div>
     </div>
 
@@ -329,7 +329,7 @@
             <div class="field"><label>Advance (THB)</label><input id="r_advance" type="number" placeholder="0"></div>
             <div class="field"><label>Advance Date</label><input id="r_advanceDate" type="date"></div>
             <div class="field"><label>Receipt</label><select id="r_receipt"><option value="">--</option><option>Yes</option><option>No</option></select></div>
-            <div class="field"><label>Reimbursement Ref</label><input id="r_reimbRef" placeholder="Asset Management-EXP-XXX"></div>
+            <div class="field"><label>Reimbursement Ref</label><input id="r_reimbRef" placeholder="EXP-XXX"></div>
             <div class="field"><label>Approved By</label><input id="r_approvedBy"></div>
             <div class="field form-full"><label>Remarks</label><textarea id="r_remarks" rows="2"></textarea></div>
           </div>

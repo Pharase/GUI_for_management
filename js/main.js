@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// LOAD Asset Management (primary database)
+// LOAD CASE WORKBOOK (primary database)
 // ═══════════════════════════════════════════════════════════════
 function loadCases(e) {
   const file = e.target.files[0];
@@ -110,7 +110,7 @@ function loadCases(e) {
       renderCaseTable(); renderSlaTable(); renderPrescriptTable(); renderReimburseTable();
       updateCounts();
       const total = APP.caseData.length+APP.slaData.length+APP.prescriptData.length+APP.reimburseData.length;
-      toast(`โหลด Asset Management สำเร็จ — ${total.toLocaleString()} รายการ · ข้อมูล Gate คำนวณอัตโนมัติแล้ว`, 'success');
+      toast(`โหลดไฟล์ สำเร็จ — ${total.toLocaleString()} รายการ · ข้อมูล Gate คำนวณอัตโนมัติแล้ว`, 'success');
     } catch(err) {
       toast('โหลดไม่สำเร็จ: '+err.message,'error');
       console.error(err);
@@ -123,7 +123,7 @@ function loadCases(e) {
 function loadLawStep(e) {
   const file = e.target.files[0];
   if (!file) { toast('เลือกไฟล์ Law_Step.xlsx','warn'); return; }
-  if (!APP.workbook) { toast('กรุณาโหลดไฟล์ Asset Management ก่อน','error'); return; }
+  if (!APP.workbook) { toast('กรุณาโหลดไฟล์ฐานข้อมูล ก่อน','error'); return; }
   const reader = new FileReader();
   reader.onload = function(ev) {
     try {
@@ -142,7 +142,7 @@ function loadLawStep(e) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SAVE / EXPORT Asset Management (write-back as DB)
+// SAVE / EXPORT CASE WORKBOOK (write-back as DB)
 // ═══════════════════════════════════════════════════════════════
 function clearSheetRows(ws, fromRow) {
   const ref=ws['!ref']; if(!ref) return;
@@ -153,7 +153,7 @@ function clearSheetRows(ws, fromRow) {
 }
 
 function exportExcel() {
-  if (!APP.workbook) { toast('กรุณาโหลดไฟล์ Asset Management ก่อน','error'); return; }
+  if (!APP.workbook) { toast('กรุณาโหลดไฟล์ฐานข้อมูล ก่อน','error'); return; }
   const btn=document.getElementById('btnExport');
   btn.disabled=true; btn.textContent='⏳ กำลังบันทึก…';
 
@@ -248,7 +248,7 @@ const CASE_FIELDS = [
   'c_legalStatus','c_assignedTo','c_assignDate','c_lawyer','c_prescriptionType',
   'c_filingExpiry','c_enforcExpiry','c_filingUrgency','c_enforcUrgency',
   'c_gate1','c_gate2','c_gate3','c_gate4roi','c_gate4dec',
-  'c_pamRef','c_pamDate','c_filingDate','c_judgmentDate',
+  'c_approvalRef','c_approvalDate','c_filingDate','c_judgmentDate',
   'c_enforcMethod','c_enforcDate','c_lastAction','c_nextAction',
   'c_nextActionDate','c_slaStatus','c_remarks','c_reviewedBy','c_reviewDate',
 ];
@@ -339,7 +339,7 @@ function readCaseForm() {
     enforcUrgency:gate1Urgency(v('c_enforcExpiry'))||v('c_enforcUrgency'),
     gate1:v('c_gate1'), gate2:v('c_gate2'), gate3:v('c_gate3'),
     gate4roi:nv('c_gate4roi'), gate4dec:v('c_gate4dec'),
-    approvalRef:v('c_pamRef'), approvalDate:v('c_pamDate'),
+    approvalRef:v('c_approvalRef'), approvalDate:v('c_approvalDate'),
     filingDate:v('c_filingDate'), judgmentDate:v('c_judgmentDate'),
     enforcMethod:v('c_enforcMethod'), enforcDate:v('c_enforcDate'),
     lastAction:v('c_lastAction'), nextAction:v('c_nextAction'),
